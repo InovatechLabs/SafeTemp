@@ -17,70 +17,75 @@
 <img width="224" height="496" alt="image" src="https://github.com/user-attachments/assets/10525728-3fdb-433a-ba56-5cdad84e1917" />
 
 
-Logotipo
+# Logotipo
+
 	•	O logotipo combina as letras “ST” com ícones relacionados à tecnologia e saúde (gráfico de pulso/coração).
 	•	O “ST” utiliza um gradiente roxo → laranja que transmite modernidade, inovação e energia.
 	•	O nome “SafeTemp” aparece em uma tipografia sans-serif fina, reforçando simplicidade e clareza.
 
-Paleta de Cores
+# Paleta de Cores
 
 A paleta principal é baseada em tons modernos e confiáveis, transmitindo segurança, tecnologia e acessibilidade.
 
- Cores Primárias
-	•	Gradiente Roxo       → Laranja       
-	•	Roxo       → transmite confiança e inovação.
-	•	Laranja       → transmite energia e dinamismo.
+ # Cores Primárias
+ 
+	•	Gradiente Roxo🟪→ Laranja🟧.
+	•	Roxo🟪→ transmite confiança e inovação.
+	•	Laranja🟧→ transmite energia e dinamismo.
 	•	Usado em botões de ação e no logotipo.
 
- Cores Secundárias
-	•	Cinza Claro      
+ # Cores Secundárias
+ 
+	•	Cinza Claro ⬜      
 	•	Fundo dos formulários e caixas de entrada.
 
-	•	Cinza Médio      
+	•	Cinza Médio ⬜     
 	•	Texto de placeholder e informações auxiliares.
 
-	•	Cinza Escuro     .
+	•	Cinza Escuro ⬜
 	•	Títulos e textos principais.
 
 	•	Branco       
 	•	Fundo de cartões e áreas de destaque, reforçando legibilidade.
 
- Cores de Apoio
+ # Cores de Apoio
 	•	Ícones de login social (Google, Apple, Facebook) mantêm suas cores originais para reconhecimento imediato.
 
-Tipografia
 
-Títulos 
-•	Fonte Sans-serif em negrito.
+# Tipografia
+
+# Títulos 
+    •	Fonte Sans-serif em negrito.
 	•	Exemplo: “CRIE SUA CONTA”.
 	•	Uso: chamadas principais, títulos de telas.
 
-Texto padrão e formulários 
-•	Fonte Sans-serif regular.
+
+# Texto padrão e formulários 
+    •	Fonte Sans-serif regular.
 	•	Exemplo: campos de “Nome”, “E-mail”, placeholders.
 	•	Uso: textos descritivos, instruções.
 
-Botões
-•	Fonte Sans-serif Bold com caixa alta.
+# Botões
+    •	Fonte Sans-serif Bold com caixa alta.
 	•	Exemplo: “CADASTRE-SE”.
 
-Botões e Componentes
+# Botões e Componentes
 
-Botão principal (CTA)
+# Botão principal (CTA)
 	•	Formato arredondado.
-	•	Fundo com gradiente roxo       → laranja
+	•	Fundo com gradiente roxo🟪→ laranja🟧.
 	•	Texto em branco com destaque em negrito.
 	
-Campos de entrada (Input Fields)
+# Campos de entrada (Input Fields)
 	•	Fundo branco
 	•	Bordas arredondadas.
 	•	Placeholder em cinza médio.
 	
-Botões de recuperação
+# Botões de recuperação
 	•	Ícones oficiais do Google, Apple e Facebook.
 	•	Mantidos em formato circular para consistência visual.
 
-Estilo Visual
+# Estilo Visual
 	•	Minimalista e clean: Uso de bastante espaço branco e poucos elementos por tela.
 	•	Ícones arredondados: Passam sensação de modernidade e acessibilidade.
 	•	Consistência cromática: Gradiente é aplicado de forma consistente em elementos-chave (logotipo, botões).
