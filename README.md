@@ -30,11 +30,11 @@ React Native (aplicativo mobile)
 Axios (requisições HTTP)
 
 🚀 Como Executar o Projeto
-Pré-requisitos
+📋 Pré-requisitos
 
-Expo.go instalado no Dispositivo Móvel para testagem em Android/iOS.
+Expo Go instalado no dispositivo móvel para testagem em Android/iOS.
 
-Passos
+▶️ Passos
 # Clone o repositório
 git clone https://github.com/InovatechLabs/SafeTemp.git
 
@@ -45,15 +45,18 @@ cd SafeTempApp
 npx expo install
 
 # Inicie a aplicação
-npx expo start -w (caso deseje testar no ambiente de desenvolvimento web)
-
+npx expo start -w   # para testar no ambiente de desenvolvimento web
 
 👨‍💻 Equipe - InovatechLabs
 
 Paulo Bueno - Scrum Master
-Pedro Oliveira - PO
+
+Pedro Oliveira - Product Owner
+
 Gabriel Juliani - Dev Team
+
 Bruno Alves - Dev Team
+
 Nicolas Henrique - Dev Team
 
 📜 Licença
