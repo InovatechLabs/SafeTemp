@@ -47,7 +47,7 @@ npx expo install
 Inicie a aplicação
 npx expo start -w (para testar no ambiente de desenvolvimento web)
 
-#👨‍💻 Equipe - InovatechLabs
+# 👨‍💻 Equipe - InovatechLabs
 
 Paulo Bueno - Scrum Master
 
