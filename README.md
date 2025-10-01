@@ -1,9 +1,9 @@
-🌡️ SafeTemp
+# 🌡️ SafeTemp
 
 Aplicativo mobile para monitoramento da temperatura de estufas em tempo real, integrado com Arduino.
 Projeto acadêmico desenvolvido na FATEC Jacareí pelo grupo InovatechLabs.
 
-📱 Sobre o Projeto
+# 📱 Sobre o Projeto
 
 O SafeTemp tem como objetivo oferecer uma solução prática e acessível para o acompanhamento de estufas.
 Com ele, o usuário pode:
@@ -29,25 +29,25 @@ React Native (aplicativo mobile)
 
 Axios (requisições HTTP)
 
-🚀 Como Executar o Projeto
+# 🚀 Como Executar o Projeto
 📋 Pré-requisitos
 
 Expo Go instalado no dispositivo móvel para testagem em Android/iOS.
 
 ▶️ Passos
-# Clone o repositório
+Clone o repositório
 git clone https://github.com/InovatechLabs/SafeTemp.git
 
-# Entre no diretório
+Entre no diretório
 cd SafeTempApp
 
-# Instale as dependências
+Instale as dependências
 npx expo install
 
-# Inicie a aplicação
-npx expo start -w   # para testar no ambiente de desenvolvimento web
+Inicie a aplicação
+npx expo start -w (para testar no ambiente de desenvolvimento web)
 
-👨‍💻 Equipe - InovatechLabs
+#👨‍💻 Equipe - InovatechLabs
 
 Paulo Bueno - Scrum Master
 
