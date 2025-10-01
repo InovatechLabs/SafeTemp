@@ -1,92 +1,61 @@
-# SafeTemp
+🌡️ SafeTemp
 
-<img width="721" height="678" alt="Captura de tela 2025-09-22 194022" src="https://github.com/user-attachments/assets/ef37cad8-4f48-451a-aae2-f4e5220d56d2" />
+Aplicativo mobile para monitoramento da temperatura de estufas em tempo real, integrado com Arduino.
+Projeto acadêmico desenvolvido na FATEC Jacareí pelo grupo InovatechLabs.
 
+📱 Sobre o Projeto
 
-<img width="728" height="919" alt="Captura de tela 2025-09-22 194039" src="https://github.com/user-attachments/assets/a60472f3-883a-4dd2-8e52-76813b0ff92c" />
+O SafeTemp tem como objetivo oferecer uma solução prática e acessível para o acompanhamento de estufas.
+Com ele, o usuário pode:
 
+📊 Visualizar a temperatura em tempo real recebida do Arduino.
 
-<img width="705" height="154" alt="Captura de tela 2025-09-22 194126" src="https://github.com/user-attachments/assets/fa682379-8ff6-40d1-8b60-18a2fcb5986a" />
+🚨 Receber alertas quando a temperatura ultrapassar limites definidos.
 
-<img width="754" height="616" alt="Captura de tela 2025-09-22 210351" src="https://github.com/user-attachments/assets/cf59df05-c7db-4fd4-b54f-975c6590911a" />
+💾 Armazenar e consultar o histórico de medições.
 
+🌍 Melhorar a eficiência no controle climático de estufas.
 
+🛠️ Tecnologias Utilizadas
+Backend & Hardware
 
-# Documento Técnico de Identidade Visual – SafeTemp
+Arduino (coleta de dados de temperatura com sensor)
 
-<img width="224" height="496" alt="image" src="https://github.com/user-attachments/assets/10525728-3fdb-433a-ba56-5cdad84e1917" />
+Node.js / Express (API de integração)
 
+Frontend
 
-# Logotipo
+React Native (aplicativo mobile)
 
-	•	O logotipo combina as letras “ST” com ícones relacionados à tecnologia e saúde (gráfico de pulso/coração).
-	•	O “ST” utiliza um gradiente roxo → laranja que transmite modernidade, inovação e energia.
-	•	O nome “SafeTemp” aparece em uma tipografia sans-serif fina, reforçando simplicidade e clareza.
+Axios (requisições HTTP)
 
-# Paleta de Cores
+🚀 Como Executar o Projeto
+Pré-requisitos
 
-A paleta principal é baseada em tons modernos e confiáveis, transmitindo segurança, tecnologia e acessibilidade.
+Expo.go instalado no Dispositivo Móvel para testagem em Android/iOS.
 
- # Cores Primárias
- 
-	•	Gradiente Roxo🟪→ Laranja🟧.
-	•	Roxo🟪→ transmite confiança e inovação.
-	•	Laranja🟧→ transmite energia e dinamismo.
-	•	Usado em botões de ação e no logotipo.
+Passos
+# Clone o repositório
+git clone https://github.com/InovatechLabs/SafeTemp.git
 
- # Cores Secundárias
- 
-	•	Cinza Claro ⬜      
-	•	Fundo dos formulários e caixas de entrada.
+# Entre no diretório
+cd SafeTempApp
 
-	•	Cinza Médio ⬜     
-	•	Texto de placeholder e informações auxiliares.
+# Instale as dependências
+npx expo install
 
-	•	Cinza Escuro ⬜
-	•	Títulos e textos principais.
-
-	•	Branco       
-	•	Fundo de cartões e áreas de destaque, reforçando legibilidade.
-
- # Cores de Apoio
-	•	Ícones de login social (Google, Apple, Facebook) mantêm suas cores originais para reconhecimento imediato.
+# Inicie a aplicação
+npx expo start -w (caso deseje testar no ambiente de desenvolvimento web)
 
 
-# Tipografia
+👨‍💻 Equipe - InovatechLabs
 
-# Títulos 
-    •	Fonte Sans-serif em negrito.
-	•	Exemplo: “CRIE SUA CONTA”.
-	•	Uso: chamadas principais, títulos de telas.
+Paulo Bueno - Scrum Master
+Pedro Oliveira - PO
+Gabriel Juliani - Dev Team
+Bruno Alves - Dev Team
+Nicolas Henrique - Dev Team
 
+📜 Licença
 
-# Texto padrão e formulários 
-    •	Fonte Sans-serif regular.
-	•	Exemplo: campos de “Nome”, “E-mail”, placeholders.
-	•	Uso: textos descritivos, instruções.
-
-# Botões
-    •	Fonte Sans-serif Bold com caixa alta.
-	•	Exemplo: “CADASTRE-SE”.
-
-# Botões e Componentes
-
-# Botão principal (CTA)
-	•	Formato arredondado.
-	•	Fundo com gradiente roxo🟪→ laranja🟧.
-	•	Texto em branco com destaque em negrito.
-	
-# Campos de entrada (Input Fields)
-	•	Fundo branco
-	•	Bordas arredondadas.
-	•	Placeholder em cinza médio.
-	
-# Botões de recuperação
-	•	Ícones oficiais do Google, Apple e Facebook.
-	•	Mantidos em formato circular para consistência visual.
-
-# Estilo Visual
-	•	Minimalista e clean: Uso de bastante espaço branco e poucos elementos por tela.
-	•	Ícones arredondados: Passam sensação de modernidade e acessibilidade.
-	•	Consistência cromática: Gradiente é aplicado de forma consistente em elementos-chave (logotipo, botões).
-	•	Legibilidade prioritária: Contraste forte entre texto (preto/cinza escuro) e fundo (cinza claro/branco).
+Este projeto é de uso acadêmico e não possui fins comerciais.
