@@ -12,20 +12,38 @@ interface UserLogin {
   password: string;
 }
 
+interface ApiResponseRegister {
+  success: boolean;
+  newUser?: {
+    id: number;
+    name: string;
+    email: string;
+    password: string;
+    resetToken?: string | null;
+    resetTokenExpires?: string | null;
+    is2FAEnabled: boolean;
+    twoFASecret?: string | null;
+    backupCode?: string | null;
+  };
+}
+
 interface ApiResponse {
-  message: string;
+  success: boolean;
   token?: string;
 }
 
-export const registerUser = async (user: UserRegister): Promise<ApiResponse> => {
+export const registerUser = async (user: UserRegister): Promise<ApiResponseRegister> => {
   try {
-    const response = await axios.post<ApiResponse>(
-      `${api.defaults.baseURL}user/register`, 
+    const response = await axios.post<ApiResponseRegister>(
+      `${api.defaults.baseURL}user/register`,
       user,
       { withCredentials: true }
     );
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.response?.data) {
+      return error.response.data;
+    }
     throw new Error(`Falha ao registrar usuário: ${error}`);
   }
 };
