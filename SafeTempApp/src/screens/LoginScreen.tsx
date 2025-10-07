@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   SafeAreaView,
   StyleSheet,
@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
-import { loginUser } from '../../services/auth';
 
 const logoImage = require('../../assets/logost.png');
 
@@ -24,7 +23,7 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
-
+  const { signIn } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,15 +32,15 @@ const LoginScreen = ({ navigation }) => {
     }
     setLoading(true);
     try {
-
-      const values={email, password}
-      await loginUser(values);
+    const operation = await signIn(email, password);
+    if (!operation.success) {
+      Alert.alert('Login falhou');
+    }
 
     } catch (error) {
       if (error.response && error.response.data && error.response.data.message) {
         Alert.alert('Erro no Login', error.response.data.message);
       } else {
-        console.error("Erro não esperado:", error);
         Alert.alert('Erro no Login', 'Não foi possível se conectar ao servidor.');
       }
     } finally {

@@ -1,38 +1,84 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import api from "../../services/api";
-import { getItem } from "../utils/storage";
+import { getItem, saveItem, deleteItem } from "../utils/storage";
+import { loginUser } from "../../services/auth"; // importa sua função de login
 
-const authContext = createContext(null);
+// Criamos o contexto
+const AuthContext = createContext(null);
 
 const AuthProvider = ({ children }) => {
-  const [userToken, setUserToken] = useState(null);
+  const [userToken, setUserToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Verifica se já existe um token salvo ao iniciar o app
   useEffect(() => {
     async function loadToken() {
-      const token = await getItem("userToken");
-      if (token) {
-        api.defaults.headers.Authorization = `Bearer ${token}`;
-        setUserToken(token);
+      try {
+        const token = await getItem("userToken");
+        if (token) {
+          api.defaults.headers.Authorization = `Bearer ${token}`;
+          setUserToken(token);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar token:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     loadToken();
   }, []);
 
+  // Função de login
+  const signIn = async (email: string, password: string) => {
+    try {
+      const response = await loginUser({ email, password });
+
+      if (response?.token) {
+        await saveItem("userToken", response.token);
+        api.defaults.headers.Authorization = `Bearer ${response.token}`;
+        setUserToken(response.token);
+        return { success: true };
+      } else {
+        throw new Error("Token não recebido do servidor");
+      }
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  // Função de logout
+  const signOut = async () => {
+    try {
+      await deleteItem("userToken");
+      delete api.defaults.headers.Authorization;
+      setUserToken(null);
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
+  };
+
   return (
-    <authContext.Provider value={{ userToken, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        userToken,
+        isLoading,
+        signIn,
+        signOut,
+      }}
+    >
       {children}
-    </authContext.Provider>
+    </AuthContext.Provider>
   );
 };
 
+// Hook personalizado
 const useAuth = () => {
-  const context = useContext(authContext);
+  const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
 };
 
-export { authContext, AuthProvider, useAuth };
+export { AuthContext, AuthProvider, useAuth };
