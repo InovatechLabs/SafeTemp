@@ -1,11 +1,12 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import LoginScreenWrapper from './src/screens/LoginScreen';
 import SignUpScreenWrapper from './src/screens/SignUpScreen';
-import HomeScreen from './src/screens/HomeScreen';
+// 1. IMPORTE O WRAPPER em vez do componente direto
+import HomeScreenWrapper from './src/screens/HomeScreen';
 
 const Stack = createStackNavigator();
 
@@ -21,7 +22,8 @@ function AuthRoutes() {
 function AppRoutes() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home" component={HomeScreen} />
+      {/* 2. USE O WRAPPER AQUI */}
+      <Stack.Screen name="Home" component={HomeScreenWrapper} />
     </Stack.Navigator>
   );
 }
