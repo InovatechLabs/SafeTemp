@@ -15,8 +15,29 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import styled from 'styled-components/native';
 
 const logoImage = require('../../assets/logost.png');
+
+const Logo = styled.Image.attrs({
+  resizeMode: 'contain',
+})`
+  width: 300px;
+  height: 100px;
+`;
+
+const ButtonTouchable = styled(TouchableOpacity)`
+  border-radius: 25px;
+  overflow: hidden;
+  margin-top: 20px;
+`;
+
+const GradientButton = styled.View`
+  background-color: #4b2a59; /* fallback para mobile */
+  padding: 12px 30px;
+  align-items: center;
+  justify-content: center;
+`;
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -53,15 +74,24 @@ const LoginScreen = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor="#E8E8E8" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
         <View style={styles.logoContainer}>
-          <Image source={logoImage} style={styles.logo} />
+          <Logo source={logoImage} />
         </View>
         <View style={styles.card}>
           <Text style={styles.title}>FAÇA SEU LOGIN</Text>
           <TextInput style={styles.input} placeholder="E-mail:" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
           <TextInput style={styles.input} placeholder="Sua senha:" value={password} onChangeText={setPassword} secureTextEntry />
-          <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={handleLogin} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Entrar</Text>}
-          </TouchableOpacity>
+                      <ButtonTouchable onPress={handleLogin} disabled={loading} activeOpacity={0.8}>
+                        <GradientButton>
+                          {loading ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                              Entrar
+                            </Text>
+                          )}
+                        </GradientButton>
+                      </ButtonTouchable>
+          
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={loading}>
             <Text style={styles.loginText}>
               Não possui conta? <Text style={styles.loginLink}>Cadastre-se aqui</Text>

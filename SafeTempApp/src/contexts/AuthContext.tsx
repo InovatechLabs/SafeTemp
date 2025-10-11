@@ -53,6 +53,7 @@ const AuthProvider = ({ children }) => {
       await deleteItem("userToken");
       delete api.defaults.headers.Authorization;
       setUserToken(null);
+
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }

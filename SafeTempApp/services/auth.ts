@@ -12,29 +12,14 @@ interface UserLogin {
   password: string;
 }
 
-interface ApiResponseRegister {
-  success: boolean;
-  newUser?: {
-    id: number;
-    name: string;
-    email: string;
-    password: string;
-    resetToken?: string | null;
-    resetTokenExpires?: string | null;
-    is2FAEnabled: boolean;
-    twoFASecret?: string | null;
-    backupCode?: string | null;
-  };
-}
-
 interface ApiResponse {
   success: boolean;
   token?: string;
 }
 
-export const registerUser = async (user: UserRegister): Promise<ApiResponseRegister> => {
+export const registerUser = async (user: UserRegister): Promise<ApiResponse> => {
   try {
-    const response = await axios.post<ApiResponseRegister>(
+    const response = await axios.post<ApiResponse>(
       `${api.defaults.baseURL}user/register`,
       user,
       { withCredentials: true }
