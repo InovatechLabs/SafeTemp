@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,7 +8,8 @@ import {
   StatusBar,
   ScrollView,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Button
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,7 +20,6 @@ import stdb from '../../assets/stdashboard.png';
 import styled from 'styled-components/native';
 import TemperatureChart from '../components/dashboard/TemperatureChart';
 import { getHistory6h, HistoryData } from '../../services/temperature';
-import Sidebar from '../components/global/Sidebar';
 
 
 const screenWidth = Dimensions.get('window').width;
@@ -29,7 +29,7 @@ const HomeScreen = ({ navigation }) => {
   const [currentTemperature, setCurrentTemperature] = useState<DataItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-      
+
   const [history, setHistory] = useState<HistoryData[]>([]);
 
   useEffect(() => {
@@ -91,7 +91,6 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Sidebar />
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
 <View style={styles.header}>
         <View style={styles.logoContainer}>
@@ -99,7 +98,6 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
       </View>
-
       <View style={[styles.card, statusColor]}>
         <Text style={styles.cardTitle}>Temperatura Atual</Text>
         <Text style={styles.temperatureText}>

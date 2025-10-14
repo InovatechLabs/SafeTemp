@@ -20,6 +20,14 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
     ]
   };
 
+  if (!data || data.length === 0) {
+  return (
+    <View style={styles.container}>
+      <Text style={{ color: '#fff' }}>Sem dados disponíveis</Text>
+    </View>
+  );
+}
+
   
   const openFullscreen = () => {
     setModalVisible(true);
