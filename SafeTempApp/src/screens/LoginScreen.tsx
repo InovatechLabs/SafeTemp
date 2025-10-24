@@ -26,13 +26,13 @@ const Logo = styled.Image.attrs({
   height: 100px;
 `;
 
-const ButtonTouchable = styled(TouchableOpacity)`
+export const ButtonTouchable = styled(TouchableOpacity)`
   border-radius: 25px;
   overflow: hidden;
   margin-top: 20px;
 `;
 
-const GradientButton = styled.View`
+export const GradientButton = styled.View`
   background-color: #4b2a59; /* fallback para mobile */
   padding: 12px 30px;
   align-items: center;

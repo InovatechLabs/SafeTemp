@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Dimensions, TouchableOpacity, Modal, Button, Text, StyleSheet } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { getHistory6h, HistoryData } from '../../../services/temperature';
+import { getHistory6h } from '../../../services/temperature';
 import { formatHour } from '../../utils/formatters/isoDate';
 import Orientation from 'react-native-orientation-locker';
+import { DataItem } from '../../utils/types/DataItem';
 
 interface Props {
-  data: HistoryData[];
+  data: DataItem[];
 }
 
 const TemperatureChart: React.FC<Props> = ({ data }) => {
@@ -15,10 +16,20 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
 
     const chartData = {
     labels: data.map(d => formatHour(d.timestamp)),
-    datasets: [
-      { data: data.map(d => d.value) }
-    ]
+  datasets: [
+    {
+      data: data.map((item) => Number(item.value)),
+    },
+  ],
   };
+
+  if (!data || data.length === 0) {
+  return (
+    <View style={styles.container}>
+      <Text style={{ color: '#fff' }}>Sem dados disponíveis</Text>
+    </View>
+  );
+}
 
   
   const openFullscreen = () => {

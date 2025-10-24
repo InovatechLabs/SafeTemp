@@ -5,8 +5,10 @@ import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import LoginScreenWrapper from './src/screens/LoginScreen';
 import SignUpScreenWrapper from './src/screens/SignUpScreen';
-// 1. IMPORTE O WRAPPER em vez do componente direto
+import TemperatureHistoryScreen from './src/screens/HistoryChartScreen';
 import HomeScreenWrapper from './src/screens/HomeScreen';
+import BottomTabs from './src/components/navigation/BottomTabNavigator';
+
 
 const Stack = createStackNavigator();
 
@@ -22,8 +24,7 @@ function AuthRoutes() {
 function AppRoutes() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {/* 2. USE O WRAPPER AQUI */}
-      <Stack.Screen name="Home" component={HomeScreenWrapper} />
+      <Stack.Screen name="MainTabs" component={BottomTabs} />
     </Stack.Navigator>
   );
 }
