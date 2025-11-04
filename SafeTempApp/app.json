@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MyBlankApp",
-    "slug": "MyBlankApp",
+    "name": "SafeTemp",
+    "slug": "SafeTempApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,13 +20,20 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "safetemp.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "212de3b3-17a7-41c6-bc87-632b6b331a3f"
+      }
+    }
   }
 }

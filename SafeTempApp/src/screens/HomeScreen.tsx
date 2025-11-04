@@ -10,7 +10,11 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
-  Button
+  Button,
+  Alert,
+  Modal,
+  TextInput,
+  Switch
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,7 +25,9 @@ import stdb from '../../assets/stdashboard.png';
 import styled from 'styled-components/native';
 import TemperatureChart from '../components/dashboard/TemperatureChart';
 import { getHistory6h } from '../../services/temperature';
-
+import * as SecureStore from 'expo-secure-store';
+import { styles } from './styles/styles';
+import { ButtonTouchable } from './LoginScreen';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -29,7 +35,12 @@ const HomeScreen = ({ navigation }) => {
   const { signOut } = useAuth();
   const [currentTemperature, setCurrentTemperature] = useState<DataItem | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [modalVisible, setModalVisible] = useState(false);
+  const [temperaturaMin, setTemperaturaMin] = useState("");
+  const [temperaturaMax, setTemperaturaMax] = useState("");
+  const [horaInicio, setHoraInicio] = useState("");
+  const [horaFim, setHoraFim] = useState("");
+  const [checked, setChecked] = useState(true);
 
   const [history, setHistory] = useState<DataItem[]>([]);
 
@@ -68,6 +79,49 @@ const HomeScreen = ({ navigation }) => {
         loadHistory();
       }, []);
   
+      const handleSaveAlert = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token");
+      console.log(token);
+      if (!token) {
+        Alert.alert("Erro", "Usuário não autenticado");
+        console.log("nao tem token")
+        return;
+      }
+
+const today = new Date().toISOString().split("T")[0]; // "2025-11-03"
+const horaInicioISO = horaInicio ? `${today}T${horaInicio}:00` : null;
+const horaFimISO = horaFim ? `${today}T${horaFim}:00` : null;
+
+      const response = await fetch(`${api.defaults.baseURL}alerts/register-alert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          temperatura_min: parseFloat(temperaturaMin),
+          temperatura_max: parseFloat(temperaturaMax),
+          hora_inicio: horaInicioISO,
+          hora_fim: horaFimISO,
+        }),
+      });
+
+      console.log('Response status:', response.status);
+const text = await response.text();
+console.log('Raw response:', text);
+      if (response.ok) {
+        Alert.alert("Sucesso", "Alerta configurado com sucesso!");
+        setModalVisible(false);
+      } else {
+      //  const errorData = await response.json();
+       // Alert.alert("Erro", errorData.message || "Falha ao salvar alerta");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível salvar o alerta");
+    }
+  };
 
   if (loading) {
     return (
@@ -90,6 +144,9 @@ const HomeScreen = ({ navigation }) => {
     statusColor = styles.warning;
   }
 
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
@@ -99,63 +156,108 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
       </View>
+      <TouchableOpacity onPress={signOut}>
+        <Text>Logout</Text>
+      </TouchableOpacity>
       <View style={[styles.card, statusColor]}>
         <Text style={styles.cardTitle}>Temperatura Atual</Text>
         <Text style={styles.temperatureText}>
           {currentTemperature?.value}°C
         </Text>
 <Text style={styles.status}>Status: {status}</Text>
+  <TouchableOpacity
+        style={styles.configButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.configButtonText}>⚙️ Configurar alerta</Text>
+      </TouchableOpacity>
       </View>
       <View style={styles.container}>
         <TemperatureChart data={history}></TemperatureChart>
+        <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Configurar Alerta</Text>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Temperatura mínima</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 10"
+          keyboardType="numeric"
+          value={temperaturaMin}
+          onChangeText={setTemperaturaMin}
+        />
+      </View>
+  <View style={styles.inputGroup}>
+        <Text style={styles.label}>Temperatura máxima</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 35"
+          keyboardType="numeric"
+          value={temperaturaMax}
+          onChangeText={setTemperaturaMax}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.cardTitle}>Período de monitoramento</Text>
+      </View>
+       <View style={styles.checkboxContainer}>
+     <Switch
+        trackColor={{ false: '#ccc', true: '#4CAF50' }}
+        thumbColor={checked ? '#fff' : '#f4f3f4'}
+        ios_backgroundColor="#3e3e3e"
+        onValueChange={setChecked}
+        value={checked}
+      />
+      <Text style={styles.label}>Sempre</Text>
+    </View>
+<View style={styles.inputGroup}>
+
+      {!checked && (
+        <>
+        <Text style={styles.cardTitle}>Customizar intervalo de horário</Text>
+        <Text style={styles.label}>Hora início</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 09:00"
+          value={horaInicio}
+          onChangeText={setHoraInicio}
+        />
+           <View style={styles.inputGroup}>
+        <Text style={styles.label}>Hora fim</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 17:00"
+          value={horaFim}
+          onChangeText={setHoraFim}
+        />
+      </View>
+       
+        </>
+      )}
+           
+       
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSaveAlert} style={styles.saveButton}>
+                <Text style={styles.saveText}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          </View>
+        </View>
+      </Modal>
       </View>
     </SafeAreaView>
   );
 };
-
-
-const chartConfig = {
-    backgroundColor: '#ffffff',
-    backgroundGradientFrom: '#ffffff',
-    backgroundGradientTo: '#ffffff',
-    decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    style: { borderRadius: 16, },
-    propsForDots: { r: '6', strokeWidth: '2', stroke: '#4c669f', },
-  };
   
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f2f5', padding: 20 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  headerTitle: { fontSize: 26, fontWeight: 'bold', color: '#333' },
-  logoutText: { fontSize: 16, color: '#4c669f', fontWeight: 'bold' },
-  card: { backgroundColor: 'white', borderRadius: 16, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#555', marginBottom: 15 },
-  temperatureText: { fontSize: 48, fontWeight: 'bold', color: '#4c669f', textAlign: 'center' },
-  statusText: { fontSize: 16, textAlign: 'center', marginTop: 10, color: '#888' },
-  statusOk: { color: 'green', fontWeight: 'bold' },
-  logoContainer: { marginTop: 20, marginBottom: 20 },
-  safe: { borderColor: '#4CAF50', borderWidth: 3 },
-  warning: { borderColor: '#FFC107', borderWidth: 3 },
-  danger: { borderColor: '#F44336', borderWidth: 3 },
-    temp: {
-    fontSize: 56,
-    fontWeight: '800',
-    color: '#003B73',
-  },
-  status: {
-    fontSize: 18,
-    marginTop: 8,
-    color: '#003B73',
-  },
-  update: {
-    marginTop: 16,
-    color: '#666',
-    fontSize: 14,
-  },
-});
+
 
 const Logo = styled.Image.attrs({
   resizeMode: 'contain',

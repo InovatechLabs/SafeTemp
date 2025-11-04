@@ -4,3 +4,7 @@ export interface DataItem {
   value: string;
   timestamp: string;
 };
+
+export interface DataItemArray {
+  records: DataItem[];
+}

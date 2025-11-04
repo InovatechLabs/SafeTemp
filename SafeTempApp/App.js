@@ -8,6 +8,15 @@ import SignUpScreenWrapper from './src/screens/SignUpScreen';
 import TemperatureHistoryScreen from './src/screens/HistoryChartScreen';
 import HomeScreenWrapper from './src/screens/HomeScreen';
 import BottomTabs from './src/components/navigation/BottomTabNavigator';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,    
+    shouldPlaySound: true,  
+    shouldSetBadge: false,   
+  }),
+});
 
 
 const Stack = createStackNavigator();

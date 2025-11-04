@@ -16,6 +16,9 @@ import {
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import styled from 'styled-components/native';
+import { registerForPushNotificationsAsync } from '../utils/notifications/notifications';
+import axios from 'axios';
+import api from '../../services/api';
 
 const logoImage = require('../../assets/logost.png');
 
@@ -46,28 +49,52 @@ const LoginScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Atenção', 'Por favor, preencha e-mail e senha.');
-      return;
-    }
-    setLoading(true);
-    try {
-    const operation = await signIn(email, password);
-    if (!operation.success) {
-      Alert.alert('Login falhou');
-    }
+ const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Atenção', 'Por favor, preencha e-mail e senha.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const operation = await signIn(email, password);
+      if (!operation.success) {
+        Alert.alert('Login falhou');
+          setLoading(false); // Adicionado: pare o loading se o login falhar
+        return;
+      }
 
-    } catch (error) {
-      if (error.response && error.response.data && error.response.data.message) {
-        Alert.alert('Erro no Login', error.response.data.message);
-      } else {
-        Alert.alert('Erro no Login', 'Não foi possível se conectar ao servidor.');
+      // 1. Tenta obter o token
+      const expoPushToken = await registerForPushNotificationsAsync();
+
+      // 2. VERIFICA se o token existe (não é null, nem undefined)
+      if (expoPushToken) {
+        console.log("Token obtido, enviando para o backend:", expoPushToken);
+            await axios.post(
+              `${api.defaults.baseURL}alerts/save-token`,
+              { expoPushToken }, // Agora temos certeza que há um token
+              {
+                headers: { Authorization: `Bearer ${operation.token}` }, 
+              }
+            );
+          console.log("Token salvo com sucesso!");
+      } else {
+        // 3. Informa se o token não veio (por ser simulador ou permissão negada)
+        console.log("Não foi possível obter o expo push token. (Simulador? Permissão?)");
+      }
+
+    } catch (error) {
+      // 4. Loga o erro COMPLETO para debug
+      console.error('Erro no processo de login ou salvamento do token:', error);
+
+      if (error.response && error.response.data && error.response.data.message) {
+        Alert.alert('Erro', error.response.data.message);
+      } else {
+        Alert.alert('Erro', 'Ocorreu um erro inesperado.');
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
