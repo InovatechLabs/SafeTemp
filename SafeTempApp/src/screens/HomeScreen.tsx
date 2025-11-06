@@ -16,7 +16,7 @@ import {
   TextInput,
   Switch
 } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { LineChart, PieChart } from 'react-native-chart-kit';
 import { useAuth } from '../contexts/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DataItem } from '../utils/types/DataItem';
@@ -28,6 +28,7 @@ import { getHistory6h } from '../../services/temperature';
 import * as SecureStore from 'expo-secure-store';
 import { styles } from './styles/styles';
 import { ButtonTouchable } from './LoginScreen';
+import { Statistics } from '../utils/types/Statistics';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -43,6 +44,7 @@ const HomeScreen = ({ navigation }) => {
   const [checked, setChecked] = useState(true);
 
   const [history, setHistory] = useState<DataItem[]>([]);
+  const [pieData, setPieData] = useState<Statistics | null>(null);
 
   useEffect(() => {
     const loadLastTemperature = async () => {
@@ -61,6 +63,20 @@ const HomeScreen = ({ navigation }) => {
     };
 
     loadLastTemperature();
+  }, []);
+
+  useEffect(() => {
+    async function fetchTemperatureData() {
+      try {
+        const response = await api.get('data/history1h');
+        const json = response.data;
+        setPieData(json);
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+    }
+
+    fetchTemperatureData();
   }, []);
 
    useEffect(() => {
@@ -85,7 +101,6 @@ const HomeScreen = ({ navigation }) => {
       console.log(token);
       if (!token) {
         Alert.alert("Erro", "Usuário não autenticado");
-        console.log("nao tem token")
         return;
       }
 
@@ -113,10 +128,7 @@ console.log('Raw response:', text);
       if (response.ok) {
         Alert.alert("Sucesso", "Alerta configurado com sucesso!");
         setModalVisible(false);
-      } else {
-      //  const errorData = await response.json();
-       // Alert.alert("Erro", errorData.message || "Falha ao salvar alerta");
-      }
+      } 
     } catch (error) {
       console.error(error);
       Alert.alert("Erro", "Não foi possível salvar o alerta");
@@ -173,6 +185,8 @@ console.log('Raw response:', text);
       </TouchableOpacity>
       </View>
       <View style={styles.container}>
+        <Text style={styles.sectionTitle}>📈  Histórico Recente</Text>
+        {/* @ts-ignore */}
         <TemperatureChart data={history}></TemperatureChart>
         <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -259,7 +273,7 @@ console.log('Raw response:', text);
   
 
 
-const Logo = styled.Image.attrs({
+export const Logo = styled.Image.attrs({
   resizeMode: 'contain',
 })`
   width: 330px;

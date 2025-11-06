@@ -142,6 +142,7 @@ configButtonText: {
     fontWeight: '800',
     color: '#003B73',
   },
+  sectionTitle:  { fontSize: 24, fontWeight: 'bold', color: '#333' },
   status: {
     fontSize: 18,
     marginTop: 8,
