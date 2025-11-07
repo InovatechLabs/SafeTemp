@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Rodar Testes Unitários
+    name: Rodar Testes Unitários e de Serviços
     runs-on: ubuntu-latest
 
     steps:
@@ -18,11 +18,14 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' 
+          node-version: '18'
           cache: 'npm'
 
       - name: Instalar dependências
         run: npm install
 
-      - name: Rodar teste do AuthContext
-        run: npm test -- src/contexts/AuthContext.test.js
+      - name: Rodar todos os testes Jest
+        run: npm test -- --coverage
+
+      - name: Exibir cobertura
+        run: cat ./coverage/lcov-report/index.html || echo "Cobertura gerada"
