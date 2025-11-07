@@ -1,5 +1,5 @@
 {
-  "dependencies": {
-    "@testing-library/react-native": "^13.3.3"
-  }
+ "scripts": {
+  "test": "jest"
+}
 }
