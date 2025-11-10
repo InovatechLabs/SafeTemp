@@ -25,7 +25,7 @@ jobs:
         run: npm install
 
       - name: Rodar todos os testes Jest
-        run: npm test -- --coverage
+        run: npm test
 
       - name: Exibir cobertura
         run: cat ./coverage/lcov-report/index.html || echo "Cobertura gerada"
