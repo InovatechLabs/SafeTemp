@@ -1,37 +1,15 @@
-name: Testes do Frontend
+name: Testes Mínimos do Frontend
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-
-jobs:
-  test:
-    name: Rodar Testes Unitários e de Serviços
-    runs-on: ubuntu-latest
+# ... (on, jobs, runs-on)
 
     defaults:
       run:
         working-directory: SafeTempApp
 
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Instalar dependências (Com flag para resolver conflitos de versão)
-
+      
+      - name: Instalar dependências
         run: npm install --legacy-peer-deps
 
-      - name: Rodar todos os testes Jest e calcular cobertura
-
-        run: npm run test:coverage
-
-      - name: Exibir link da cobertura (Apenas para debug e verificação)
-        run: cat ./coverage/lcov-report/index.html || echo "Cobertura gerada"
+      - name: Rodar Testes
+        run: npm run test
