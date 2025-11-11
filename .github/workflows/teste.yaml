@@ -11,6 +11,11 @@ jobs:
     name: Rodar Testes Unitários e de Serviços
     runs-on: ubuntu-latest
 
+    # 1. CORREÇÃO DE DIRETÓRIO: Define SafeTempApp como o diretório de trabalho padrão para todos os passos
+    defaults:
+      run:
+        working-directory: SafeTempApp
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -21,11 +26,13 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Instalar dependências
-        run: npm install
+      - name: Instalar dependências (Com flag para resolver conflitos de versão)
+        # 2. CORREÇÃO DE INSTALAÇÃO: Usa --legacy-peer-deps para resolver o ERESOLVE
+        run: npm install --legacy-peer-deps
 
-      - name: Rodar todos os testes Jest
-        run: npm test
+      - name: Rodar todos os testes Jest e calcular cobertura
+        # Este comando é executado dentro da SafeTempApp/
+        run: npm run test:coverage
 
-      - name: Exibir cobertura
+      - name: Exibir link da cobertura (Apenas para debug e verificação)
         run: cat ./coverage/lcov-report/index.html || echo "Cobertura gerada"
