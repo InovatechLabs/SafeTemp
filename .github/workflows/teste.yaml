@@ -3,12 +3,10 @@ name: Testes Mínimos do Frontend
 on:
   push:
     branches:
-      # Corrigido: Uso da sintaxe de lista YAML correta
       - main
       - develop
   pull_request:
     branches:
-      # Corrigido: Uso da sintaxe de lista YAML correta
       - main
       - develop
 
@@ -17,7 +15,6 @@ jobs:
     name: Rodar Teste Básico
     runs-on: ubuntu-latest
 
-    # 1. CORREÇÃO DE DIRETÓRIO: Garante que todos os comandos rodem dentro da pasta do projeto
     defaults:
       run:
         working-directory: SafeTempApp
@@ -33,7 +30,6 @@ jobs:
           cache: 'npm'
 
       - name: Instalar dependências
-        # 2. CORREÇÃO DE INSTALAÇÃO: Resolve o erro ERESOLVE de conflitos de versão
         run: npm install --legacy-peer-deps
 
       - name: Rodar Teste Simples
