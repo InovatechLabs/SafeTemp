@@ -1,0 +1,37 @@
+name: Testes Mínimos do Frontend
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    name: Rodar Teste Básico
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: SafeTempApp
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm install --legacy-peer-deps
+
+      - name: Rodar Teste Simples
+        # Executa o Jest, que agora deve encontrar o jest.config.js e seu teste
+        run: npm run test
