@@ -29,10 +29,25 @@ import * as SecureStore from 'expo-secure-store';
 import { styles } from './styles/styles';
 import { ButtonTouchable } from './LoginScreen';
 import { Statistics } from '../utils/types/Statistics';
+import { StackNavigationProp } from '@react-navigation/stack';
+
+type RootStackParamList = {
+  Home: undefined;
+  Details: { id: number } | undefined;
+};
+
+type HomeScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'Home'
+>;
+
+type Props = {
+  navigation: HomeScreenNavigationProp;
+};
 
 const screenWidth = Dimensions.get('window').width;
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation }: Props) => {
   const { signOut } = useAuth();
   const [currentTemperature, setCurrentTemperature] = useState<DataItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,8 +66,7 @@ const HomeScreen = ({ navigation }) => {
       try {
         const response = await api.get('data/lastdata');
         const data = response.data;
-  
-        console.log("Dado recebido do backend:", data);
+
         setCurrentTemperature(data.lastRecord);
 
       } catch (error) {
@@ -146,7 +160,7 @@ console.log('Raw response:', text);
   let status = 'Normal';
   let statusColor = styles.safe;
 
-  let temp = parseInt(currentTemperature?.value)
+  let temp = parseInt(currentTemperature ? currentTemperature.value : '0')
 
   if (temp > 35) {
     status = 'Perigo';
@@ -280,7 +294,11 @@ export const Logo = styled.Image.attrs({
   height: 100px;
 `;
 
-const HomeScreenWrapper = ({ navigation }) => (
+type WrapperProps = {
+  navigation: HomeScreenNavigationProp;
+};
+
+const HomeScreenWrapper = ({ navigation }: WrapperProps) => (
   <SafeAreaProvider>
     <HomeScreen navigation={navigation} />
   </SafeAreaProvider>
