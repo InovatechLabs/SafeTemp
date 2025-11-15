@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome5';
 import historyst from '../../assets/historyst.png';
 import styled from 'styled-components/native';
 import DateInput from '../components/inputs/dateInput';
-import { DataItem } from '../utils/types/DataItem';
+import { DataItem, DataItemArray } from '../utils/types/DataItem';
 import { getHistory} from '../../services/temperature';
 import { ButtonTouchable, GradientButton } from './LoginScreen';
 
@@ -28,7 +28,7 @@ const TemperatureHistoryScreen = () => {
         : undefined;
       
       const response = await getHistory(dateString);
-      setData(response);
+      setData(response.records || []);
 
     } catch (err) {
       console.error("Erro ao fetch history:", err);
@@ -38,13 +38,38 @@ const TemperatureHistoryScreen = () => {
     }
   }
 
-const chartData = data.length > 0
-  ? {
-      labels: data.map((item) => {
-        const date = new Date(item.timestamp);
-        const hours = date.getUTCHours();
-        const minutes = String(date.getUTCMinutes()).padStart(2, "0");
-        return `${hours}:${minutes}`;
+  const MAX_POINTS = 60;
+
+// se houver muitos dados, agrupa
+const shouldGroup = data.length > MAX_POINTS;
+
+// calcula tamanho de cada grupo (ex: se 600 pontos e MAX_POINTS=60 → grupo de 10)
+const groupSize = shouldGroup ? Math.ceil(data.length / MAX_POINTS) : 1;
+
+const groupedData: DataItem[] = [];
+
+for (let i = 0; i < data.length; i += groupSize) {
+  const group = data.slice(i, i + groupSize);
+  const avgValue =
+    group.reduce((sum, item) => sum + Number(item.value), 0) / group.length;
+
+  groupedData.push({
+    id: group[0].id,
+    chipId: group[0].chipId,
+    value: avgValue.toFixed(2),
+    timestamp: group[0].timestamp, // usa o primeiro timestamp do grupo
+  });
+}
+
+const chartData = groupedData.length > 0
+    ? {
+        labels: groupedData.map((item, index) => {
+
+          if (index % 5 !== 0) return "";
+          const date = new Date(item.timestamp);
+          const hours = date.getUTCHours();
+          const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+          return `${hours}:${minutes}`;
       }),
       datasets: [
         {
@@ -80,21 +105,31 @@ const chartData = data.length > 0
 
   // Cálculos dos dados 
 
+  const getArray = () => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray((data as any).records)) return (data as any).records;
+  return [];
+};
+
   const max = (campo: keyof DataItem): number => {
-    if (data.length == 0) return 0;
-    return Math.max(...data.map((d) => Number(d[campo])));
-  }
+  const arr = getArray();
+  if (arr.length === 0) return 0;
+  return Math.max(...arr.map((d) => Number(d[campo])));
+};
 
-  const min = (campo: keyof DataItem): number => {
-    if (data.length == 0) return 0;
-    return Math.min(...data.map((d) => Number(d[campo])));
-  }
+const min = (campo: keyof DataItem): number => {
+  const arr = getArray();
+  if (arr.length === 0) return 0;
+  return Math.min(...arr.map((d) => Number(d[campo])));
+};
 
-  const avg = (campo: keyof DataItem): number => {
-    if (data.length == 0) return 0;
-    const sum = data.reduce((acc, d) => acc + Number(d[campo]), 0);
-    return parseFloat((sum / data.length).toFixed(2));
-  }
+const avg = (campo: keyof DataItem): number => {
+  const arr = getArray();
+  if (arr.length === 0) return 0;
+  const sum = arr.reduce((acc, d) => acc + Number(d[campo]), 0);
+  return parseFloat((sum / arr.length).toFixed(2));
+};
 
  return (
   <SafeAreaView style={styles.safeArea}>

@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import api from "../../services/api";
 import { getItem, saveItem, deleteItem } from "../utils/storage";
-import { loginUser } from "../../services/auth"; // importa sua função de login
+import { loginUser } from "../../services/auth"; 
+import * as SecureStore from 'expo-secure-store';
 
 // Criamos o contexto
 const AuthContext = createContext(null);
@@ -34,10 +35,10 @@ const AuthProvider = ({ children }) => {
       const response = await loginUser({ email, password });
 
       if (response?.token) {
-        await saveItem("userToken", response.token);
+        await SecureStore.setItemAsync("token", response.token);
         api.defaults.headers.Authorization = `Bearer ${response.token}`;
         setUserToken(response.token);
-        return { success: true };
+        return { success: true, token: response.token };
       } else {
         throw new Error("Token não recebido do servidor");
       }

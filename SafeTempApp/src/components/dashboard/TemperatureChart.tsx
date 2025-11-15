@@ -7,29 +7,44 @@ import Orientation from 'react-native-orientation-locker';
 import { DataItem } from '../../utils/types/DataItem';
 
 interface Props {
-  data: DataItem[];
+  data: {
+    records: DataItem[];
+  }
 }
 
 const TemperatureChart: React.FC<Props> = ({ data }) => {
 
     const [modalVisible, setModalVisible] = useState(false);
+    const hasRecords = data?.records && data.records.length > 0;
 
-    const chartData = {
-    labels: data.map(d => formatHour(d.timestamp)),
-  datasets: [
-    {
-      data: data.map((item) => Number(item.value)),
-    },
-  ],
-  };
 
-  if (!data || data.length === 0) {
-  return (
-    <View style={styles.container}>
-      <Text style={{ color: '#fff' }}>Sem dados disponíveis</Text>
-    </View>
-  );
-}
+ const chartData = hasRecords
+    ? {
+        labels: data.records.map((item, index) => {
+          const date = new Date(item.timestamp);
+          const hours = date.getUTCHours();
+          const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+
+        
+          return index % 10 === 0 ? `${hours}:${minutes}` : "";
+        }),
+        datasets: [
+          {
+            data: data.records.map(item => Number(item.value)),
+          },
+        ],
+      }
+    : {
+        labels: ["08:00", "09:00", "10:00", "11:00", "12:00"],
+        datasets: [
+          {
+            data: [20, 21.5, 23, 22, 24],
+            color: () => "rgba(255, 255, 255, 0.6)",
+          },
+        ],
+      };
+
+
 
   
   const openFullscreen = () => {
