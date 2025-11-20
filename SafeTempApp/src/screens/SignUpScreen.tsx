@@ -40,7 +40,7 @@ const GradientButton = styled.View`
 `;
 
 // Componente botão web com CSS inline
-const GradientButtonWeb = ({ onClick, disabled, children }) => (
+const GradientButtonWeb = ({ onClick, disabled, children }: any) => (
   <button
     onClick={onClick}
     disabled={disabled}
@@ -64,7 +64,7 @@ const GradientButtonWeb = ({ onClick, disabled, children }) => (
 );
 
 // ===== COMPONENTE =====
-const SignUpScreen = ({ navigation }) => {
+const SignUpScreen = ({ navigation }: any) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -165,7 +165,7 @@ const SignUpScreen = ({ navigation }) => {
 };
 
 // ===== WRAPPER =====
-const SignUpScreenWrapper = ({ navigation }) => (
+const SignUpScreenWrapper = ({ navigation }: any) => (
   <SafeAreaProvider>
     <SignUpScreen navigation={navigation} />
   </SafeAreaProvider>

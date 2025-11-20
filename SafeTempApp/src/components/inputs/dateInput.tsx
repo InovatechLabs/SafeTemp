@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Platform, View, Text, Pressable, StyleSheet } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';

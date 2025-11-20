@@ -12,9 +12,20 @@ interface UserLogin {
   password: string;
 }
 
-interface ApiResponse {
+export interface ApiResponse {
+  success: boolean;
+  message?: string;
+  token?: string;
+  tempToken?: string;
+  requires2FA?: boolean;
+}
+
+export interface SignInResult {
   success: boolean;
   token?: string;
+  tempToken?: string;
+  requires2FA?: boolean;
+  message?: string;
 }
 
 export const registerUser = async (user: UserRegister): Promise<ApiResponse> => {

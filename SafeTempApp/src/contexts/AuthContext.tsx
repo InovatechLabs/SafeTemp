@@ -1,17 +1,18 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import api from "../../services/api";
 import { getItem, saveItem, deleteItem } from "../utils/storage";
-import { loginUser } from "../../services/auth"; 
+import { ApiResponse, loginUser, SignInResult } from "../../services/auth"; 
 import * as SecureStore from 'expo-secure-store';
+import { AuthContextProps } from "../utils/types/AuthContext";
 
-// Criamos o contexto
-const AuthContext = createContext(null);
 
-const AuthProvider = ({ children }) => {
+const AuthContext = createContext<AuthContextProps | null>(null);
+
+const AuthProvider = ({ children }: any) => {
   const [userToken, setUserToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verifica se já existe um token salvo ao iniciar o app
+
   useEffect(() => {
     async function loadToken() {
       try {
@@ -30,23 +31,36 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   // Função de login
-  const signIn = async (email: string, password: string) => {
-    try {
-      const response = await loginUser({ email, password });
+ const signIn = async (email: string, password: string): Promise<SignInResult> => {
+  try {
+    const response = await loginUser({ email, password });
 
-      if (response?.token) {
-        await SecureStore.setItemAsync("token", response.token);
-        api.defaults.headers.Authorization = `Bearer ${response.token}`;
-        setUserToken(response.token);
-        return { success: true, token: response.token };
-      } else {
-        throw new Error("Token não recebido do servidor");
-      }
-    } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      return { success: false, message: error.message };
+    if (response.requires2FA) {
+      return {
+        success: true,
+        requires2FA: true,
+        tempToken: response.tempToken, 
+      };
     }
-  };
+
+    if (response?.token) {
+      await SecureStore.setItemAsync("userToken", response.token);
+      api.defaults.headers.Authorization = `Bearer ${response.token}`;
+      setUserToken(response.token);
+
+      return {
+        success: true,
+        token: response.token,
+      };
+    }
+
+    return { success: false, message: "Token não recebido" };
+
+  } catch (error: any) {
+    console.error("Erro ao fazer login:", error);
+    return { success: false, message: error.message };
+  }
+};
 
   // Função de logout
   const signOut = async () => {
@@ -60,6 +74,11 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  const finalizeLogin = async (token: string) => {
+      setUserToken(token); 
+      api.defaults.headers.Authorization = `Bearer ${token}`;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -67,6 +86,7 @@ const AuthProvider = ({ children }) => {
         isLoading,
         signIn,
         signOut,
+        finalizeLogin,
       }}
     >
       {children}

@@ -115,19 +115,19 @@ const chartData = groupedData.length > 0
   const max = (campo: keyof DataItem): number => {
   const arr = getArray();
   if (arr.length === 0) return 0;
-  return Math.max(...arr.map((d) => Number(d[campo])));
+  return Math.max(...arr.map((d: any) => Number(d[campo])));
 };
 
 const min = (campo: keyof DataItem): number => {
   const arr = getArray();
   if (arr.length === 0) return 0;
-  return Math.min(...arr.map((d) => Number(d[campo])));
+  return Math.min(...arr.map((d: any) => Number(d[campo])));
 };
 
 const avg = (campo: keyof DataItem): number => {
   const arr = getArray();
   if (arr.length === 0) return 0;
-  const sum = arr.reduce((acc, d) => acc + Number(d[campo]), 0);
+  const sum = arr.reduce((acc: any, d: any) => acc + Number(d[campo]), 0);
   return parseFloat((sum / arr.length).toFixed(2));
 };
 
@@ -183,7 +183,7 @@ const avg = (campo: keyof DataItem): number => {
 };
 
 
-const InfoCard = ({ icon, label, value }) => {
+const InfoCard = ({ icon, label, value }: any) => {
   return (
     <View style={styles.card}>
       <Icon name={icon} size={24} color="#3498db" />

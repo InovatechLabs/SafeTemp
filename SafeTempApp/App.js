@@ -7,6 +7,7 @@ import LoginScreenWrapper from './src/screens/LoginScreen';
 import SignUpScreenWrapper from './src/screens/SignUpScreen';
 import TemperatureHistoryScreen from './src/screens/HistoryChartScreen';
 import HomeScreenWrapper from './src/screens/HomeScreen';
+import { TwoFactorScreenWrapper } from './src/components/auth/TwoFactorScreen';
 import BottomTabs from './src/components/navigation/BottomTabNavigator';
 import * as Notifications from 'expo-notifications';
 
@@ -26,6 +27,7 @@ function AuthRoutes() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreenWrapper} />
       <Stack.Screen name="SignUp" component={SignUpScreenWrapper} />
+      <Stack.Screen name="TwoFactor" component={TwoFactorScreenWrapper} />
     </Stack.Navigator>
   );
 }
