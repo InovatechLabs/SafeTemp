@@ -70,23 +70,6 @@ const LoginScreen = ({ navigation }: any) => {
   return;
 }
 
- 
-      const expoPushToken = await registerForPushNotificationsAsync();
-
-      if (expoPushToken) {
-        console.log("Token obtido, enviando para o backend:", expoPushToken);
-        await axios.post(
-          `${api.defaults.baseURL}alerts/save-token`,
-          { expoPushToken },
-          {
-            headers: { Authorization: `Bearer ${operation.token}` },
-          }
-        );
-        console.log("Token salvo com sucesso!");
-      } else {
-        console.log("Não foi possível obter o expo push token. (Simulador? Permissão?)");
-      }
-
     } catch (error: any) {
       console.error('Erro no processo de login ou salvamento do token:', error);
 

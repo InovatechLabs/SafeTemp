@@ -17,6 +17,7 @@ import * as SecureStore from 'expo-secure-store';
 import { StackNavigationProp } from "@react-navigation/stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuth } from "../../contexts/AuthContext";
+import { registerForPushNotificationsAsync } from "../../utils/notifications/notifications";
 
 interface Props {
   route: any;
@@ -73,7 +74,19 @@ const handleChange = (value: string, index: number) => {
         api.defaults.headers.Authorization = `Bearer ${response.data.token}`;
         finalizeLogin(response.data.token);
 
-        Alert.alert("Sucesso", "Autenticação verificada!");
+        const expoPushToken = await registerForPushNotificationsAsync();
+
+        if (expoPushToken) {
+          await axios.post(
+            `${api.defaults.baseURL}alerts/save-token`,
+            { expoPushToken },
+            {
+              headers: { Authorization: `Bearer ${response.data.token}` },
+            }
+          );
+        } else {
+          console.log("Não foi possível obter o expo push token. (Simulador? Permissão?)");
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -81,8 +94,6 @@ const handleChange = (value: string, index: number) => {
     } finally {
       setLoading(false);
     }
-    console.log("Code array:", code);
-console.log("Token final:", code.join(""));
   };
 
   const handleBackupSubmit = async () => {

@@ -8,6 +8,8 @@ import DateInput from '../components/inputs/dateInput';
 import { DataItem, DataItemArray } from '../utils/types/DataItem';
 import { getHistory} from '../../services/temperature';
 import { ButtonTouchable, GradientButton } from './LoginScreen';
+import ReportsList from '../components/history/ReportsList';
+import ReportModal from '../components/history/ReportModal';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -16,6 +18,14 @@ const TemperatureHistoryScreen = () => {
   const [date, setDate] = React.useState<Date | null>(null);
   const [data, setData] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+
+  const handleOpenReport = (report: any) => {
+  setSelectedReport(report);
+  setModalVisible(true);
+};
+
 
   const fetchHistory = async () => {
     try {
@@ -142,8 +152,29 @@ const avg = (campo: keyof DataItem): number => {
       <View style={styles.logoContainer}>
         <Logo source={historyst} />
       </View>
+            <View style={styles.headerContainer}>
+       
+        <Text style={styles.headerTitle}>📑 Relatórios do dia</Text>
+        <View style={styles.separator} />
+      </View>
+      <ReportsList onPressReport={handleOpenReport} />
+       <View style={{ padding: 5 }}>
+         <ReportModal visible={modalVisible}
+           onClose={() => setModalVisible(false)}
+           reportData={selectedReport} />
+       </View>
 
-      <View style={{ padding: 16 }}>
+        <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>📜 Histórico de Temperatura</Text>
+        <View style={styles.separator} />
+      </View>
+      
+      <View style={{ display: 'flex',  flexDirection: 'column', width: '90%', backgroundColor: '#f3f3f3', padding: 12, borderRadius: 12 }}>
+        <View style={styles.generalInfoContainer}>
+          <Text style={styles.paragraph}>Selecione uma data para visualização dos dados. Gráficos gerados 
+            com dados do dia inteiro tendem a ser menos legíveis e demoram mais para carregar.
+          </Text>
+        </View>
         <DateInput value={date} onChange={setDate} placeholder="Data do evento" />
         <TouchableOpacity>
           <ButtonTouchable onPress={fetchHistory} disabled={loading} activeOpacity={0.8}>
@@ -159,8 +190,6 @@ const avg = (campo: keyof DataItem): number => {
           </ButtonTouchable>
         </TouchableOpacity>
       </View>
-
-      <Text style={styles.headerTitle}>Histórico de Temperatura</Text>
 
       <LineChart
         data={chartData}
@@ -208,7 +237,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
     marginBottom: 20,
   },
   chart: {
@@ -221,6 +250,17 @@ const styles = StyleSheet.create({
     width: '90%',
     marginTop: 20,
   },
+  generalInfoContainer: {
+    borderLeftColor: '4px solid #ce6e46',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#fff3e0',
+    lineHeight: 1.4,
+    color: '#333',
+    fontSize: 14,
+    marginTop: 10,
+  },
+  paragraph: { fontSize: 13, color: '#444', lineHeight: 20, marginBottom: 15, textAlign: 'justify' },
   card: {
     backgroundColor: '#f8f9fa', 
     borderRadius: 12,
@@ -232,6 +272,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  headerContainer: {
+    width: '100%',
+    marginVertical: 15, 
+    paddingHorizontal: 20,
+  },
+  separator: {
+    height: 1,       
+    backgroundColor: '#E0E0E0', 
+    width: '100%',       
+    borderRadius: 1,   
   },
   cardLabel: {
     marginTop: 10,
