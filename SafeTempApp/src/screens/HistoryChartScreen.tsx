@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Dimensions, SafeAreaView, StatusBar, Button, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/FontAwesome5';
@@ -10,6 +10,9 @@ import { getHistory} from '../../services/temperature';
 import { ButtonTouchable, GradientButton } from './LoginScreen';
 import ReportsList from '../components/history/ReportsList';
 import ReportModal from '../components/history/ReportModal';
+import api from '../../services/api';
+import { ReportStats, ReportUIModel } from '../utils/types/reports';
+import SearchReports from '../components/history/SearchReports';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -20,6 +23,7 @@ const TemperatureHistoryScreen = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [reportsList, setReportsList] = useState<ReportUIModel[]>([]);
 
   const handleOpenReport = (report: any) => {
   setSelectedReport(report);
@@ -48,6 +52,55 @@ const TemperatureHistoryScreen = () => {
     }
   }
 
+  const fetchTodayReports = async () => {
+    setLoading(true)
+
+    try {
+      const response = await api.get('reports/today');
+
+      if(response.data) {
+            const formattedData: ReportUIModel[] = response.data.map((item: any) => {
+                    let parsedStats: ReportStats = {};
+                    try {
+                        parsedStats = JSON.parse(item.resumo);
+                    } catch (e) {
+                      console.error("Erro ao parsear resumo", e);
+                    }
+                    const dateObj = new Date(item.data);
+                    const timeFormatted = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+                    const avgTemp = parsedStats.media ? parsedStats.media.toFixed(1) : '?';
+            
+                    return {
+                      id: item.id.toString(),
+                      title: `Relatório ${item.id}`,
+                      time: timeFormatted,
+                      summaryText: `Temp. Média ${avgTemp}°C`,
+            
+                      fullData: {
+                        text: item.relatorio,
+                        stats: parsedStats,
+                        meta: {
+                          chipId: item.chip_id,
+                          date: item.data,
+                          criado_em: item.criado_em
+                        }
+                      }
+                    }
+              });
+              setReportsList(formattedData);
+      }
+    } catch (e) {
+      console.error("Erro ao encontrar relatorios:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+      fetchTodayReports();
+  }, []);
+
   const MAX_POINTS = 60;
 
 // se houver muitos dados, agrupa
@@ -67,7 +120,7 @@ for (let i = 0; i < data.length; i += groupSize) {
     id: group[0].id,
     chipId: group[0].chipId,
     value: avgValue.toFixed(2),
-    timestamp: group[0].timestamp, // usa o primeiro timestamp do grupo
+    timestamp: group[0].timestamp, 
   });
 }
 
@@ -141,28 +194,39 @@ const avg = (campo: keyof DataItem): number => {
   return parseFloat((sum / arr.length).toFixed(2));
 };
 
- return (
-  <SafeAreaView style={styles.safeArea}>
-    <StatusBar barStyle="light-content" />
-    <ScrollView 
-      style={{ flex: 1 }}
-      contentContainerStyle={{ alignItems: 'center', paddingBottom: 80 }} // 👈 espaço extra pro bottom tab
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.logoContainer}>
-        <Logo source={historyst} />
-      </View>
-            <View style={styles.headerContainer}>
-       
-        <Text style={styles.headerTitle}>📑 Relatórios do dia</Text>
-        <View style={styles.separator} />
-      </View>
-      <ReportsList onPressReport={handleOpenReport} />
-       <View style={{ padding: 5 }}>
-         <ReportModal visible={modalVisible}
-           onClose={() => setModalVisible(false)}
-           reportData={selectedReport} />
-       </View>
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ alignItems: 'center', paddingBottom: 80 }} // 👈 espaço extra pro bottom tab
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.logoContainer}>
+          <Logo source={historyst} />
+        </View>
+        <View style={styles.headerContainer}>
+
+          <Text style={styles.headerTitle}>📑 Relatórios do dia</Text>
+          <View style={styles.separator} />
+        </View>
+
+        <ReportsList
+          onPressReport={handleOpenReport}
+          data={reportsList}
+          loading={loading}
+        />
+
+        <View style={{ padding: 5 }}>
+          <ReportModal visible={modalVisible}
+            onClose={() => setModalVisible(false)}
+            reportData={selectedReport} />
+        </View>
+
+       <SearchReports 
+            onSearchSuccess={(novosRelatorios) => setReportsList(novosRelatorios)}
+            onLoading={(isLoading) => setLoading(isLoading)}
+        />
 
         <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>📜 Histórico de Temperatura</Text>

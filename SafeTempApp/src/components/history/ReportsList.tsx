@@ -2,63 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReportUIModel, ReportStats } from '../../utils/types/reports';
-import api from '../../../services/api';
+
+const MAX_LIST_HEIGHT = 380;
 
 interface ReportsListProps {
   onPressReport: (report: ReportUIModel) => void; 
+  data: ReportUIModel[]; 
+  loading?: boolean;
 }
 
-export default function ReportsList({ onPressReport }: ReportsListProps) {
+export default function ReportsList({ onPressReport, data, loading }: ReportsListProps) {
 
-  const [reports, setReports] = useState<ReportUIModel[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchReports = async () => {
-
-    try {
-       const response = await api.get('reports/list');
-       const apiData = await response.data;
-
-       const formattedData: ReportUIModel[] = apiData.map((item: any) => {
-        let parsedStats: ReportStats = {};
-        try {
-            parsedStats = JSON.parse(item.resumo);
-        } catch (e) {
-          console.error("Erro ao parsear resumo", e);
-        }
-        const dateObj = new Date(item.data);
-        const timeFormatted = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-        const avgTemp = parsedStats.media ? parsedStats.media.toFixed(1) : '?';
-
-        return {
-          id: item.id.toString(),
-          title: `Relatório ${item.id}`,
-          time: timeFormatted,
-          summaryText: `Temp. Média ${avgTemp}°C`,
-
-          fullData: {
-            text: item.relatorio,
-            stats: parsedStats,
-            meta: {
-              chipId: item.chip_id,
-              date: item.data,
-              criado_em: item.criado_em
-            }
-          }
-        }
-       });
-       setReports(formattedData);
-    } catch (error) {
-        console.error("Erro ao buscar relatórios:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-  
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  const isScrollable = data.length > 5;
   const renderItem = ({ item }: { item: ReportUIModel }) => {
 
     return (
@@ -86,16 +41,25 @@ export default function ReportsList({ onPressReport }: ReportsListProps) {
     return <ActivityIndicator size="small" color="#4A148C" style={{ marginVertical: 20 }} />;
   }
 
-  return (
+return (
     <View style={styles.container}>
-      <FlatList
-        data={reports}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        scrollEnabled={false}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Text style={styles.emptyText}>Nenhum relatório encontrado hoje.</Text>}
-      />
+      <View style={[
+        styles.listWrapper, 
+        isScrollable && { height: MAX_LIST_HEIGHT } 
+      ]}>
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+        
+          scrollEnabled={isScrollable} 
+          nestedScrollEnabled={true} 
+          showsVerticalScrollIndicator={true} 
+          
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhum relatório encontrado hoje.</Text>}
+        />
+      </View>
     </View>
   );
 }
@@ -106,6 +70,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginVertical: 10,
   },
+
+  listWrapper: {
+    width: '100%',
+   borderRadius: 16,
+    overflow: 'hidden', 
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -115,6 +85,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     gap: 10,
+    paddingBottom: 10, 
   },
   card: {
     flexDirection: 'row',
