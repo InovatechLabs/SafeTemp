@@ -1,4 +1,4 @@
-import { View, Text, Button, StatusBar, ScrollView } from "react-native"
+import { View, Text, Button, StatusBar, ScrollView, Modal, TextInput } from "react-native"
 import AlertasModal from "../components/config/AlertsList"
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -10,6 +10,25 @@ import { Alert } from "../utils/types/Alerts";
 
 export default function SettingsScreen() {
   const [alertasAtivos, setAlertasAtivos] = useState<Alert[]>([]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [novoNome, setNovoNome] = useState("");
+
+  const handleOpenEditModal = (id: number, nomeAtual: string | null | undefined) => {
+    setEditingId(id);
+    setNovoNome(nomeAtual ?? ""); 
+    setModalVisible(true);
+  };
+
+  const handleSaveName = async () => {
+    if (editingId !== null) {
+    
+      await handleChangeName(editingId, novoNome); 
+      setModalVisible(false); 
+      setEditingId(null);    
+    }
+  };
 
   useEffect(() => {
     carregarAlertas();
@@ -63,6 +82,17 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleChangeName = async (id: number, novoNome: string) => {
+    try {
+      await api.patch(`alerts/editname/${id}`, {
+        nome: novoNome
+      });
+      carregarAlertas();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <StatusBar barStyle="light-content" />
@@ -76,7 +106,40 @@ export default function SettingsScreen() {
         onDesativarAlerta={handleDesativar}
         onAtivarAlerta={handleAtivar}
         onExcluirAlerta={handleExcluir}
+        onChangeName={handleChangeName}
+        onPressEdit={handleOpenEditModal}
       />
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ width: 300, backgroundColor: "white", borderRadius: 10, padding: 20, alignItems: "center" }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 15 }}>Editar Nome do Alerta</Text>
+            
+            <TextInput
+              style={{ 
+                  width: '100%', 
+                  borderWidth: 1, 
+                  borderColor: '#ccc', 
+                  borderRadius: 5, 
+                  padding: 10, 
+                  marginBottom: 20 
+              }}
+              placeholder="Digite o novo nome"
+              value={novoNome}
+              onChangeText={setNovoNome}
+            />
+
+            <View style={{ flexDirection: "row", justifyContent: "space-between", width: '100%' }}>
+              <Button title="Cancelar" color="red" onPress={() => setModalVisible(false)} />
+              <Button title="Salvar" onPress={handleSaveName} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

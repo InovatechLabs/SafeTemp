@@ -8,4 +8,6 @@ export interface Alert {
   criado_em: string;
   ativo: boolean;
   notificacaoAtiva: boolean;
+  nome?: string;
+  nota?: string;
 }

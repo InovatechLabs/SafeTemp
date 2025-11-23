@@ -48,14 +48,20 @@ type Props = {
 const screenWidth = Dimensions.get('window').width;
 
 const HomeScreen = ({ navigation }: Props) => {
+
   const { signOut } = useAuth();
+
   const [currentTemperature, setCurrentTemperature] = useState<DataItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // States do formulario de criaçao de alerta
   const [temperaturaMin, setTemperaturaMin] = useState("");
   const [temperaturaMax, setTemperaturaMax] = useState("");
   const [horaInicio, setHoraInicio] = useState("");
   const [horaFim, setHoraFim] = useState("");
+  const [nome, setNome] = useState("");
+  const [nota, setNota] = useState("");
   const [checked, setChecked] = useState(true);
 
   const [history, setHistory] = useState<DataItem[]>([]);
@@ -133,6 +139,8 @@ const horaFimISO = horaFim ? `${today}T${horaFim}:00` : null;
           temperatura_max: parseFloat(temperaturaMax),
           hora_inicio: horaInicioISO,
           hora_fim: horaFimISO,
+          nome: nome || null,
+          nota: nota || null
         }),
       });
 
@@ -202,84 +210,113 @@ console.log('Raw response:', text);
         <Text style={styles.sectionTitle}>📈  Histórico Recente</Text>
         {/* @ts-ignore */}
         <TemperatureChart data={history}></TemperatureChart>
-        <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Configurar Alerta</Text>
+ <Modal visible={modalVisible} animationType="slide" transparent>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
 
+      <Text style={styles.modalTitle}>Configurar Alerta</Text>
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Temperatura mínima</Text>
+        <Text style={styles.label}>Nome do Alerta (Opcional)</Text>
         <TextInput
           style={styles.input}
-          placeholder="Ex: 10"
-          keyboardType="numeric"
-          value={temperaturaMin}
-          onChangeText={setTemperaturaMin}
-        />
-      </View>
-  <View style={styles.inputGroup}>
-        <Text style={styles.label}>Temperatura máxima</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: 35"
-          keyboardType="numeric"
-          value={temperaturaMax}
-          onChangeText={setTemperaturaMax}
+          placeholder="Ex: Experimento com Fungos"
+          placeholderTextColor={'#a3a3a3'}
+          value={nome}
+          onChangeText={setNome}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.cardTitle}>Período de monitoramento</Text>
+        <Text style={styles.label}>Nota (Opcional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: Desativar após as 13:00h"
+          placeholderTextColor={'#a3a3a3'}
+          value={nota}
+          onChangeText={setNota}
+        />
       </View>
-       <View style={styles.checkboxContainer}>
-     <Switch
-        trackColor={{ false: '#ccc', true: '#4CAF50' }}
-        thumbColor={checked ? '#fff' : '#f4f3f4'}
-        ios_backgroundColor="#3e3e3e"
-        onValueChange={setChecked}
-        value={checked}
-      />
-      <Text style={styles.label}>Sempre</Text>
-    </View>
-<View style={styles.inputGroup}>
+
+      <Text style={styles.sectionTitle}>Temperaturas</Text>
+      
+      <View style={styles.rowContainer}>
+        <View style={styles.halfInputContainer}>
+          <Text style={styles.label}>Mínima (°C)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 10"
+            placeholderTextColor={'#a3a3a3'}
+            keyboardType="numeric"
+            value={temperaturaMin}
+            onChangeText={setTemperaturaMin}
+          />
+        </View>
+        <View style={styles.halfInputContainer}>
+          <Text style={styles.label}>Máxima (°C)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 35"
+            placeholderTextColor={'#a3a3a3'}
+            keyboardType="numeric"
+            value={temperaturaMax}
+            onChangeText={setTemperaturaMax}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.sectionTitle}>Período de monitoramento</Text>
+
+      <View style={styles.switchContainer}>
+        <Switch
+          trackColor={{ false: '#ccc', true: '#4CAF50' }}
+          thumbColor={checked ? '#fff' : '#f4f3f4'}
+          ios_backgroundColor="#3e3e3e"
+          onValueChange={setChecked}
+          value={checked}
+        />
+        <Text style={styles.switchLabel}>
+            {checked ? "Monitorar 24h" : "Definir horário específico"}
+        </Text>
+      </View>
 
       {!checked && (
-        <>
-        <Text style={styles.cardTitle}>Customizar intervalo de horário</Text>
-        <Text style={styles.label}>Hora início</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: 09:00"
-          value={horaInicio}
-          onChangeText={setHoraInicio}
-        />
-           <View style={styles.inputGroup}>
-        <Text style={styles.label}>Hora fim</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: 17:00"
-          value={horaFim}
-          onChangeText={setHoraFim}
-        />
-      </View>
-       
-        </>
-      )}
-           
-       
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSaveAlert} style={styles.saveButton}>
-                <Text style={styles.saveText}>Salvar</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.rowContainer}>
+          <View style={styles.halfInputContainer}>
+            <Text style={styles.label}>Hora início</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: 09:00"
+              placeholderTextColor={'#a3a3a3'}
+              value={horaInicio}
+              onChangeText={setHoraInicio}
+            />
           </View>
+
+          <View style={styles.halfInputContainer}>
+            <Text style={styles.label}>Hora fim</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: 17:00"
+              placeholderTextColor={'#a3a3a3'}
+              value={horaFim}
+              onChangeText={setHoraFim}
+            />
           </View>
         </View>
-      </Modal>
+      )}
+
+      <View style={styles.modalButtons}>
+        <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
+          <Text style={styles.cancelText}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleSaveAlert} style={styles.saveButton}>
+          <Text style={styles.saveText}>Salvar</Text>
+        </TouchableOpacity>
+      </View>
+
+    </View>
+  </View>
+</Modal>
       </View>
     </SafeAreaView>
   );

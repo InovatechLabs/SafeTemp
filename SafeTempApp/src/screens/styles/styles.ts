@@ -17,12 +17,12 @@ export const styles = StyleSheet.create({
   backgroundColor: "rgba(0,0,0,0.5)",
 },
 modalContent: {
-    // Estilo para a caixa branca do formulário
+  
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     padding: 20,
     width: '90%', 
-    maxWidth: 400, // Um bom tamanho para um formulário modal
+    maxWidth: 400, 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -45,6 +45,27 @@ modalContent: {
 inputGroup: {
   marginBottom: 12,
 },
+rowContainer: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    gap: 15, 
+    marginBottom: 10,
+  },
+  halfInputContainer: {
+    flex: 1, 
+  },
+  
+
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    gap: 10,
+  },
+  switchLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
 
 
   input: {
@@ -142,7 +163,7 @@ configButtonText: {
     fontWeight: '800',
     color: '#003B73',
   },
-  sectionTitle:  { fontSize: 24, fontWeight: 'bold', color: '#333' },
+  sectionTitle:  { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 15 },
   status: {
     fontSize: 18,
     marginTop: 8,

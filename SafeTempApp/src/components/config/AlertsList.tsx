@@ -25,11 +25,16 @@ interface AlertItemProps {
   onDesativar: (id: number) => void;
   onAtivar: (id: number) => void;
   onExcluir: (id: number) => void;
+  onChangeName: (id: number, novoNome: string) => void;
+  onPressEdit: (id: number, nomeAtual: string | null | undefined) => void;
+
 }
 
 
-const AlertItem = ({ item, onDesativar, onAtivar, onExcluir }: AlertItemProps) => {
+const AlertItem = ({ item, onDesativar, onAtivar, onExcluir, onChangeName, onPressEdit }: AlertItemProps) => {
+
   const [expanded, setExpanded] = useState(false);
+
   const limite = `${item.temperatura_min ?? 'N/A'}°C - ${
     item.temperatura_max ?? 'N/A'
   }°C`;
@@ -37,13 +42,16 @@ const AlertItem = ({ item, onDesativar, onAtivar, onExcluir }: AlertItemProps) =
     item.hora_fim
   )}`;
 
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={() => setExpanded((e) => !e)}
     >
       <View style={styles.itemContainer}>
-        
+              <Text style={styles.alertName}>
+            {item.nome}
+          </Text>
         {/* STATUS */}
         <View style={styles.statusContainer}>
           <View
@@ -76,6 +84,12 @@ const AlertItem = ({ item, onDesativar, onAtivar, onExcluir }: AlertItemProps) =
         )}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
+            style={[styles.button, styles.modificarButton]}
+            onPress={() => onPressEdit(item.id, item.nome)}
+          >
+            <Text style={styles.excluirButtonText}>Modificar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.button, styles.desativarButton]}
             onPress={() => onDesativar(item.id)}
             disabled={!item.ativo}
@@ -100,9 +114,12 @@ interface AlertasListProps {
   onDesativarAlerta: (id: number) => void;
   onAtivarAlerta: (id: number) => void;
   onExcluirAlerta: (id: number) => void;
+  onChangeName: (id: number, novoNome: string) => void;
+  onPressEdit: (id: number, nomeAtual: string | null | undefined) => void;
+
 }
 
-export default function AlertasModal({ alertas, onDesativarAlerta, onAtivarAlerta, onExcluirAlerta }: AlertasListProps) {
+export default function AlertasModal({ alertas, onDesativarAlerta, onAtivarAlerta, onExcluirAlerta, onChangeName, onPressEdit }: AlertasListProps) {
   return (
 
       <SafeAreaView style={styles.container}>
@@ -121,7 +138,9 @@ export default function AlertasModal({ alertas, onDesativarAlerta, onAtivarAlert
                 item={item}
                 onDesativar={onDesativarAlerta} 
                 onAtivar={onAtivarAlerta}
-                onExcluir={onExcluirAlerta}    
+                onExcluir={onExcluirAlerta} 
+                onChangeName={onChangeName}  
+                onPressEdit={onPressEdit}
               />
             )}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -196,8 +215,16 @@ logoContainer: { marginTop: 20, marginBottom: 20 },
     marginBottom: 4,
     fontWeight: "500",
   },
+  alertName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+    backgroundColor: '#f7f7f7',
+    padding: 5,
+    borderRadius: 4
+  },
 
-  /* AJUSTE DO STATUS */
   statusDot: {
     width: 12,
     height: 12,
@@ -258,4 +285,7 @@ container: { flex: 1, backgroundColor: '#f0f2f5', padding: 20, width: '100%' },
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
+  modificarButton: {
+    backgroundColor: '#539dff'
+  }
 });

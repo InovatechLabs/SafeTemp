@@ -8,7 +8,8 @@ import {
   TouchableOpacity, 
   Dimensions, 
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import stlogo from '../../../assets/logost.png';
@@ -21,6 +22,8 @@ import {
 } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import api from '../../../services/api';
+import { salvarAndroid } from '../../utils/reports/saveAndroid';
+import * as FileSystem from 'expo-file-system/legacy';
 
 interface ReportModalProps {
   visible: boolean;
@@ -41,6 +44,7 @@ const { height } = Dimensions.get('window');
 export default function ReportModal({ visible, onClose, reportData }: ReportModalProps) {
 
     const [downloading, setDownloading] = useState(false);
+    const [downloadingCSV, setDownloadingCSV] = useState(false);
 
     if (!reportData) return null;
 
@@ -90,7 +94,7 @@ export default function ReportModal({ visible, onClose, reportData }: ReportModa
     });
   };
 
-      const handlePDFDownload = async (id: string) => {
+    const handlePDFDownload = async (id: string) => {
         setDownloading(true)
 
         const pdfUrl = `${api.defaults.baseURL}reports/reportpdf/${id}`;
@@ -107,17 +111,16 @@ export default function ReportModal({ visible, onClose, reportData }: ReportModa
             }
             const output = await File.downloadFileAsync(pdfUrl, destinationFile);
 
-            if (output) {
-                if (!(await Sharing.isAvailableAsync())) {
-                    Alert.alert("Erro", "Compartilhamento indisponível.");
-                    return;
-                }
-
-                await Sharing.shareAsync(output.uri, {
-                    mimeType: 'application/pdf',
-                    dialogTitle: `Baixar Relatório ${id}`
-                });
-            }
+      if (output) {
+        if (Platform.OS === 'android') {
+          await salvarAndroid(output.uri, `relatorio_${id}.pdf`, 'application/pdf', FileSystem.EncodingType.Base64);
+        } else {
+          await Sharing.shareAsync(output.uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: `Baixar PDF`
+          });
+        }
+      }
         } catch (error) {
             console.error(error);
             Alert.alert("Erro", "Não foi possível baixar o PDF.");
@@ -125,6 +128,46 @@ export default function ReportModal({ visible, onClose, reportData }: ReportModa
             setDownloading(false);
         }
     };
+
+  const handleCSVDownload = async (id: string) => {
+
+    if (!id) {
+      Alert.alert("Erro", "ID do relatório inválido.");
+      return;
+    }
+    setDownloadingCSV(true)
+
+    const csvUrl = `${api.defaults.baseURL}data/exportcsv?type=relatorios&id=${id}`;
+    const destination = new Directory(Paths.cache, 'csvs')
+    try {
+
+      if (!destination.exists) {
+        destination.create();
+      }
+
+      const destinationFile = new File(destination, `resumo_relatorio_${id}.csv`);
+      if (destinationFile.exists) {
+        destinationFile.delete();
+      }
+      const output = await File.downloadFileAsync(csvUrl, destinationFile);
+
+      if (output) {
+        if (Platform.OS === 'android') {
+          await salvarAndroid(output.uri, `resumo_relatorio_${id}.csv`, 'text/csv', FileSystem.EncodingType.UTF8);
+        } else {
+          await Sharing.shareAsync(output.uri, {
+            mimeType: 'text/csv',
+            dialogTitle: `Baixar CSV ${id}`
+          });
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível exportar o CSV.");
+    } finally {
+      setDownloadingCSV(false);
+    }
+  };
 
   return (
     <Modal
@@ -216,38 +259,47 @@ export default function ReportModal({ visible, onClose, reportData }: ReportModa
             <View style={styles.actionsContainer}>
               <Text style={styles.sectionTitle}>Ações</Text>
               <View style={styles.actionButtonsRow}>
-<TouchableOpacity 
-  style={styles.actionBtn} 
-  activeOpacity={0.7} 
-  onPress={() => handlePDFDownload(id)} // Chama a função passando o ID
-  disabled={downloading} // Evita clique duplo
->
-  <View style={[styles.iconCircle, { backgroundColor: '#FFEBEE' }]}>
-    {downloading ? (
-      // Mostra loading girando se estiver baixando
-      <ActivityIndicator size="small" color="#C62828" />
-    ) : (
-      // Mostra ícone normal se estiver parado
-      <MaterialCommunityIcons name="file-pdf-box" size={24} color="#C62828" />
-    )}
-  </View>
-  <Text style={styles.actionLabel}>
-    {downloading ? 'Baixando...' : 'Baixar PDF'}
-  </Text>
-</TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  activeOpacity={0.7}
+                  onPress={() => handlePDFDownload(id)}
+                  disabled={downloading}
+                >
+                  <View style={[styles.iconCircle, { backgroundColor: '#FFEBEE' }]}>
+                    {downloading ? (
+                      <ActivityIndicator size="small" color="#C62828" />
+                    ) : (
+                      <MaterialCommunityIcons name="file-pdf-box" size={24} color="#C62828" />
+                    )}
+                  </View>
+                  <Text style={styles.actionLabel}>
+                    {downloading ? 'Baixando...' : 'Baixar PDF'}
+                  </Text>
+                </TouchableOpacity>
 
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  activeOpacity={0.7}
+                  onPress={() => handleCSVDownload(id)}
+                  disabled={downloadingCSV}
+                >
+                  <View style={[styles.iconCircle, { backgroundColor: '#FFEBEE' }]}>
+                    {downloadingCSV ? (
+                      <ActivityIndicator size="small" color="#2E7D32" />
+                    ) : (
+                      <MaterialCommunityIcons name="file-delimited" size={24} color="#2E7D32" />
+                    )}
+                  </View>
+                  <Text style={styles.actionLabel}>
+                    {downloadingCSV ? 'Exportando...' : 'Exportar CSV'}
+                  </Text>
+                </TouchableOpacity>
+                
                 <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
                   <View style={[styles.iconCircle, { backgroundColor: '#E3F2FD' }]}>
                     <MaterialCommunityIcons name="share-variant" size={24} color="#1565C0" />
                   </View>
                   <Text style={styles.actionLabel}>Compartilhar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
-                  <View style={[styles.iconCircle, { backgroundColor: '#E8F5E9' }]}>
-                    <MaterialCommunityIcons name="file-delimited" size={24} color="#2E7D32" />
-                  </View>
-                  <Text style={styles.actionLabel}>Exportar CSV</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -19,6 +19,7 @@ import styled from 'styled-components/native';
 import { registerForPushNotificationsAsync } from '../utils/notifications/notifications';
 import axios from 'axios';
 import api from '../../services/api';
+import * as SecureStore from 'expo-secure-store';
 
 const logoImage = require('../../assets/logost.png');
 
@@ -49,35 +50,48 @@ const LoginScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
 
-  const handleLogin = async () => {
+const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Atenção', 'Por favor, preencha e-mail e senha.');
       return;
     }
+
     setLoading(true);
+    
     try {
       const operation = await signIn(email, password);
+
       if (!operation.success) {
-        Alert.alert('Login falhou');
-        setLoading(false); 
+        Alert.alert('Login falhou', operation.message || 'Verifique suas credenciais'); 
+        setLoading(false);
         return;
       }
+
       if (operation.requires2FA) {
-  navigation.navigate("TwoFactor", {
-    tempToken: operation.tempToken,
-  });
-  setLoading(false);
-  return;
-}
-
-    } catch (error: any) {
-      console.error('Erro no processo de login ou salvamento do token:', error);
-
-      if (error.response && error.response.data && error.response.data.message) {
-        Alert.alert('Erro', error.response.data.message);
-      } else {
-        Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+        setLoading(false); 
+        navigation.navigate("TwoFactor", {
+          tempToken: operation.tempToken,
+        });
+        return;
       }
+
+      if (operation.token) {
+        await SecureStore.setItemAsync("token", operation.token);
+
+        api.defaults.headers.Authorization = `Bearer ${operation.token}`;
+        try {
+            const expoPushToken = await registerForPushNotificationsAsync();
+            if (expoPushToken) {
+                await api.post('alerts/save-token', { expoPushToken });
+            }
+        } catch (pushError) {
+            console.log("Erro não bloqueante ao salvar push token:", pushError);
+        }
+      }
+
+    } catch (error) {
+      console.error("Erro no login:", error);
+      Alert.alert("Erro", "Ocorreu um erro inesperado ao fazer login.");
     } finally {
       setLoading(false);
     }
