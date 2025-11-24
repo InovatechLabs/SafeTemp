@@ -62,7 +62,7 @@ const handleLogin = async () => {
       const operation = await signIn(email, password);
 
       if (!operation.success) {
-        Alert.alert('Login falhou', operation.message || 'Verifique suas credenciais'); 
+        Alert.alert('Erro no Login', operation.message || 'Não foi possível entrar.');
         setLoading(false);
         return;
       }

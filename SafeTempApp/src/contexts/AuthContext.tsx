@@ -4,6 +4,7 @@ import { getItem, saveItem, deleteItem } from "../utils/storage";
 import { ApiResponse, loginUser, SignInResult } from "../../services/auth"; 
 import * as SecureStore from 'expo-secure-store';
 import { AuthContextProps } from "../utils/types/AuthContext";
+import axios from "axios";
 
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -58,7 +59,20 @@ const AuthProvider = ({ children }: any) => {
 
   } catch (error: any) {
     console.error("Erro ao fazer login:", error);
-    return { success: false, message: error.message };
+   let msg = "Ocorreu um erro inesperado.";
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        msg = error.response.data.message || "Erro desconhecido no servidor.";
+      
+      } else if (error.request) {
+        msg = "Falha de conexão. Verifique sua internet.";
+      }
+    } 
+    else if (error instanceof Error) {
+      msg = error.message;
+    }
+    return { success: false, message: msg };
   }
 };
 
