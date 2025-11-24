@@ -24,10 +24,12 @@ import TemperatureChart from '../components/dashboard/TemperatureChart';
 import { getHistory6h } from '../../services/temperature';
 import * as SecureStore from 'expo-secure-store';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { LineChart, PieChart } from 'react-native-chart-kit';
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import stdb from '../../assets/stdashboard.png';
+import { Alert as AlertType } from '../utils/types/Alerts';
 
 type RootStackParamList = {
   Home: undefined;
@@ -46,7 +48,7 @@ const HomeScreen = () => {
   const [currentTemperature, setCurrentTemperature] = useState<DataItem | null>(null);
   const [history, setHistory] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ min: '--', max: '--' });
+  const [stats, setStats] = useState({ min: '--', max: '--', std: 0 });
 
   const [modalVisible, setModalVisible] = useState(false);
   const [temperaturaMin, setTemperaturaMin] = useState("");
@@ -56,18 +58,21 @@ const HomeScreen = () => {
   const [nome, setNome] = useState("");
   const [nota, setNota] = useState("");
   const [checked, setChecked] = useState(true);
+  const [isAlerting, setIsAlerting] = useState(false);
+  const [chartLimits, setChartLimits] = useState<{min: number, max: number } | null>(null);
 
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [lastDataResponse, history1hResponse, history6hData] = await Promise.all([
+      const [lastDataResponse, history1hResponse, history6hData, alertsResponse] = await Promise.all([
         api.get('data/lastdata'),
         api.get('data/history1h'),
-        getHistory6h()
+        getHistory6h(),
+        api.get<AlertType[]>('alerts/list')
       ]);
 
       setCurrentTemperature(lastDataResponse.data.lastRecord);
-      
+
       const dataResponse = history6hData as unknown as DataItemArray;
 
       if (dataResponse && dataResponse.records) {
@@ -79,10 +84,22 @@ const HomeScreen = () => {
       }
 
       if (history1hResponse.data.statistics) {
-          setStats({
-              min: history1hResponse.data.statistics.min,
-              max: history1hResponse.data.statistics.max
-          })
+        setStats({
+          min: history1hResponse.data.statistics.min,
+          max: history1hResponse.data.statistics.max,
+          std: history1hResponse.data.desvioPadrao,
+        })
+      }
+      const alerts = alertsResponse.data;
+      const activeAlert = alerts.find(a => a.ativo && a.temperatura_min != null && a.temperatura_max != null);
+
+      if (activeAlert) {
+        setChartLimits({
+          min: activeAlert.temperatura_min!,
+          max: activeAlert.temperatura_max!
+        });
+      } else {
+        setChartLimits(null);
       }
 
     } catch (error) {
@@ -97,6 +114,85 @@ const HomeScreen = () => {
       loadDashboardData();
     }, [])
   );
+
+
+  const getPieData = (data: DataItem[], min: number | null, max: number | null) => {
+    if (!data || data.length === 0 || min === null || max === null) return [];
+
+    let below = 0;
+    let ideal = 0;
+    let above = 0;
+
+    data.forEach(item => {
+      const val = parseFloat(item.value);
+
+      if (val < min) below++;
+      else if (val > max) above++;
+      else ideal++;
+    });
+
+    const total = below + ideal + above;
+    if (total === 0) return [];
+
+    return [
+      {
+        name: `Abaixo (<${min}°)`,
+        population: below,
+        color: "#4FC3F7",
+        legendFontColor: "#7F7F7F",
+        legendFontSize: 12
+      },
+      {
+        name: "Na Meta",
+        population: ideal,
+        color: "#4CAF50",
+        legendFontColor: "#7F7F7F",
+        legendFontSize: 12
+      },
+      {
+        name: `Acima (>${max}°)`,
+        population: above,
+        color: "#FF5252",
+        legendFontColor: "#7F7F7F",
+        legendFontSize: 12
+      }
+    ].filter(item => item.population > 0);
+  };
+
+  const getTimeDifference = (timestamp: string | undefined) => {
+  if (!timestamp) return "Desconhecido";
+  
+  const now = new Date();
+  const recordTime = new Date(timestamp);
+  const diffMs = now.getTime() - recordTime.getTime(); 
+  const diffMins = Math.floor(diffMs / 60000); 
+
+  if (diffMins < 1) return "Agora mesmo";
+  if (diffMins === 1) return "Há 1 minuto";
+  if (diffMins < 60) return `Há ${diffMins} minutos`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  return `Há ${diffHours} horas`;
+};
+ const lastUpdateText = getTimeDifference(currentTemperature?.timestamp);
+  
+  const isOffline = (() => {
+    if (lastUpdateText.includes('horas') || lastUpdateText.includes('dias')) return true;
+
+    const match = lastUpdateText.match(/(\d+)/); 
+    if (match) {
+      const minutes = parseInt(match[0], 10); 
+      return minutes > 20; 
+    }
+    
+    return false; 
+  })();
+
+const getStability = (std: number) => {
+    if (std < 1) return { label: "Alta Estabilidade", color: "#4CAF50", icon: "pulse" };
+    if (std < 2.5) return { label: "Oscilação Normal", color: "#FFC107", icon: "wave" };
+    return { label: "Alta Instabilidade", color: "#FF4444", icon: "flash" };
+};
 
   const handleSaveAlert = async () => {
     try {
@@ -143,23 +239,25 @@ const HomeScreen = () => {
     signOut();
   };
 
-  let statusText = 'Normal';
-  let statusColorBg = '#4CAF50'; 
+  const normalGradient = ['#2A2D5D', '#4B2A59'] as const;
+  const normalStatusBg = '#4CAF50'; 
+  const normalIcon = "thermometer";
 
-  if (currentTemperature) {
-      let temp = parseFloat(currentTemperature.value);
-      if (temp > 35) {
-          statusText = 'Perigo';
-          statusColorBg = '#FF4444'; 
-      } else if (temp > 30) {
-          statusText = 'Alerta';
-          statusColorBg = '#FFC107'; 
-      }
-  }
+  const alertGradient = ['#8B0000', '#CC2E2E'] as const; 
+  const alertStatusBg = '#FFC107'; 
+  const alertIcon = "alert-circle-outline";
+
+  const currentGradient = isAlerting ? alertGradient : normalGradient;
+  const currentStatusBg = isAlerting ? alertStatusBg : normalStatusBg;
+  const currentStatusText = isAlerting ? "ALERTA CRÍTICO" : "Monitoramento Ativo";
+  const currentIcon = isAlerting ? alertIcon : normalIcon;
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F6F9" />
+     <StatusBar 
+         barStyle="light-content" 
+         backgroundColor={isAlerting ? '#8B0000' : '#F4F6F9'} 
+      />
     
       <View style={styles.header}>
         <View style={styles.logoContainer}>
@@ -177,18 +275,18 @@ const HomeScreen = () => {
       >
 
         <LinearGradient
-          colors={['#2A2D5D', '#4B2A59']} 
+          colors={currentGradient} 
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.heroCard}
         >
-          <View style={styles.heroHeader}>
-            <View style={styles.statusBadge}>
-               <View style={[styles.statusDot, { backgroundColor: statusColorBg }]} />
-               <Text style={styles.statusText}>{statusText}</Text>
+        <View style={styles.heroHeader}>
+            <View style={styles.statusBadge}>      
+               <View style={[styles.statusDot, { backgroundColor: currentStatusBg }]} />
+               <Text style={styles.statusText}>{currentStatusText}</Text>
             </View>
-            <MaterialCommunityIcons name="thermometer" size={24} color="#FFF" style={{ opacity: 0.8 }} />
-          </View>
+            <MaterialCommunityIcons name={currentIcon} size={24} color="#FFF" style={{ opacity: 0.8 }} />
+            </View>
 
           <View style={styles.tempContainer}>
             {loading && !currentTemperature ? (
@@ -213,6 +311,35 @@ const HomeScreen = () => {
                 <Text style={styles.statValue}>{stats.max}°</Text>
             </View>
           </View>
+                    <View style={styles.sensorStatusContainer}>
+            
+            {/* Lado Esquerdo: Tempo */}
+            <View style={styles.sensorInfoItem}>
+                <MaterialCommunityIcons name="clock-time-four-outline" size={20} color="#666" />
+              <View style={{ marginLeft: 10 }}>
+                <Text style={styles.sensorLabel}>Última Leitura</Text>
+                <Text style={[
+                  styles.sensorValue,
+                  { color: isOffline ? '#FF4444' : '#333' }
+                ]}>
+                  {lastUpdateText}
+                </Text>
+                </View>
+            </View>
+
+            <View style={styles.verticalDividerDark} />
+
+            <View style={styles.sensorInfoItem}>
+               
+                <View style={{ marginLeft: 10 }}>
+                    <Text style={styles.sensorLabel}>Ambiente</Text>
+                    <Text style={[styles.sensorValue, { color: getStability(stats.std || 0).color }]}>
+                        {getStability(stats.std || 0).label}
+                    </Text>
+                </View>
+            </View>
+
+        </View>
         </LinearGradient>
 
         <TouchableOpacity 
@@ -242,16 +369,54 @@ const HomeScreen = () => {
           </View>
         </View>
 
+        <View style={styles.chartSection}>
+          <View style={styles.sectionHeader}>
+             <Text style={styles.sectionTitle}>Distribuição de Temperatura</Text>
+          </View>
+          
+<View style={styles.chartCard}>
+   {history.length > 0 && chartLimits ? (
+      <PieChart
+        data={getPieData(history, chartLimits.min, chartLimits.max)}
+        width={Dimensions.get('window').width - 40}
+        height={220}
+        chartConfig={{
+          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+          decimalPlaces: 0,
+        }}
+        accessor={"population"}
+        backgroundColor={"transparent"}
+        paddingLeft={"15"}
+        center={[10, 0]}
+        absolute
+        hasLegend={true}
+      />
+   ) : (
+      <View style={{ padding: 30, alignItems: 'center' }}>
+          {!chartLimits ? (
+              <>
+                <MaterialCommunityIcons name="cog-off" size={40} color="#ccc" />
+                <Text style={{ color: '#666', textAlign: 'center', marginTop: 10 }}>
+                    Nenhum alerta ativo.{'\n'}
+                    Configure os limites min/max para visualizar a eficiência.
+                </Text>
+              </>
+          ) : (
+              <Text style={{ color: '#999' }}>Aguardando dados...</Text>
+          )}
+      </View>
+   )}
+</View>
+        </View>
+
       </ScrollView>
 
-      {/* --- MODAL DE CONFIGURAÇÃO (Mantido Original) --- */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollView}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Configurar Alerta</Text>
-            
-            {/* ... Campos do Formulário (Idênticos ao original) ... */}
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Nome do Alerta (Opcional)</Text>
               <TextInput style={styles.input} placeholder="Ex: Experimento com Fungos" placeholderTextColor={'#a3a3a3'} value={nome} onChangeText={setNome} />
@@ -310,7 +475,6 @@ const HomeScreen = () => {
   );
 };
 
-// --- ESTILOS (Novo Design + Estilos do Modal Original) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -344,7 +508,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
-  // --- HERO CARD ---
+sensorStatusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 15,
+    marginTop: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  sensorInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1, 
+    justifyContent: 'center', 
+  },
+  sensorLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 2,
+  },
+  sensorValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  verticalDividerDark: {
+    width: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 10,
+  },
   heroCard: {
     borderRadius: 24,
     padding: 20,
@@ -447,6 +644,7 @@ const styles = StyleSheet.create({
   // --- CHART SECTION ---
   chartSection: {
     marginBottom: 20,
+    textAlign: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -45,14 +45,9 @@ export const registerUser = async (user: UserRegister): Promise<ApiResponse> => 
 };
 
 export const loginUser = async (user: UserLogin): Promise<ApiResponse> => {
-  try {
-    const response = await axios.post<ApiResponse>(
-      `${api.defaults.baseURL}user/login`, 
-      user,
-      { withCredentials: true }
+    const response = await api.post<ApiResponse>(
+      'user/login', 
+      user
     );
     return response.data;
-  } catch (error) {
-    throw new Error(`Falha ao logar usuário: ${error}`);
-  }
 };

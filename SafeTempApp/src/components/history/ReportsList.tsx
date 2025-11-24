@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReportUIModel, ReportStats } from '../../utils/types/reports';
 
@@ -14,51 +14,52 @@ interface ReportsListProps {
 export default function ReportsList({ onPressReport, data, loading }: ReportsListProps) {
 
   const isScrollable = data.length > 5;
-  const renderItem = ({ item }: { item: ReportUIModel }) => {
 
-    return (
-      <TouchableOpacity 
-        style={styles.card} 
-        onPress={() => onPressReport(item)}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: '#4A148C' }]}>
-          <MaterialCommunityIcons name="file-document-outline" size={20} color="#FFF" />
-        </View>
+  const renderReportItem = (item: ReportUIModel) => (
+    <TouchableOpacity 
+      key={item.id} 
+      style={styles.card} 
+      onPress={() => onPressReport(item)}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: '#4A148C' }]}>
+        <MaterialCommunityIcons name="file-document-outline" size={20} color="#FFF" />
+      </View>
 
-        <View style={styles.textContainer}>
-          <Text style={styles.reportText} numberOfLines={1}>
-            <Text style={styles.boldText}>{item.title}</Text> - {item.time} - {item.summaryText}
-          </Text>
-        </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.reportText} numberOfLines={1}>
+          <Text style={styles.boldText}>{item.title}</Text> - {item.time} - {item.summaryText}
+        </Text>
+      </View>
 
-        <MaterialCommunityIcons name="chevron-right" size={20} color="#8d8d8d" />
-      </TouchableOpacity>
-    );
-  };
+      <MaterialCommunityIcons name="chevron-right" size={20} color="#8d8d8d" />
+    </TouchableOpacity>
+  );
 
   if (loading) {
     return <ActivityIndicator size="small" color="#4A148C" style={{ marginVertical: 20 }} />;
   }
 
-return (
+  return (
     <View style={styles.container}>
       <View style={[
         styles.listWrapper, 
-        isScrollable && { height: MAX_LIST_HEIGHT } 
+        isScrollable && { height: MAX_LIST_HEIGHT }
       ]}>
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
         
-          scrollEnabled={isScrollable} 
+        <ScrollView
           nestedScrollEnabled={true} 
-          showsVerticalScrollIndicator={true} 
-          
+          scrollEnabled={isScrollable} 
+          showsVerticalScrollIndicator={true}
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhum relatório encontrado hoje.</Text>}
-        />
+        >
+          {data.length > 0 ? (
+            data.map(item => renderReportItem(item))
+          ) : (
+            <Text style={styles.emptyText}>Nenhum relatório encontrado hoje.</Text>
+          )}
+        </ScrollView>
+
       </View>
     </View>
   );
