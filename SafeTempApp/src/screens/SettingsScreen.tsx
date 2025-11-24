@@ -1,12 +1,14 @@
 import { View, Text, Button, StatusBar, ScrollView, Modal, TextInput } from "react-native"
 import AlertasModal from "../components/config/AlertsList"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import api from "../../services/api";
 import { styles } from "./styles/styles";
 import { Logo } from "./HomeScreen";
 import stconfig from '../.././assets/stconfig.png';
 import { Alert } from "../utils/types/Alerts";
+import TwoFactorActiveScreen from "../components/config/TwoFactorActive";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function SettingsScreen() {
   const [alertasAtivos, setAlertasAtivos] = useState<Alert[]>([]);
@@ -30,9 +32,11 @@ export default function SettingsScreen() {
     }
   };
 
-  useEffect(() => {
-    carregarAlertas();
-  }, []);
+useFocusEffect(
+    useCallback(() => {
+      carregarAlertas();
+    }, [])
+  );
 
   const carregarAlertas = async () => {
     try {
@@ -94,52 +98,67 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <StatusBar barStyle="light-content" />
+  <View style={{ flex: 1, backgroundColor: '#fff' }}> 
+    <StatusBar barStyle="dark-content" />
 
-      <View style={styles.logoContainer}>
-        <Logo source={stconfig} /> 
+    <ScrollView 
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+      showsVerticalScrollIndicator={true}
+    >
+      <View style={{ width: '100%', alignItems: 'center', marginTop: 20 }}>
+        
+        <View style={styles.logoContainer}>
+          <Logo source={stconfig} /> 
+        </View>
+
+        <AlertasModal
+          alertas={alertasAtivos}
+          onDesativarAlerta={handleDesativar}
+          onAtivarAlerta={handleAtivar}
+          onExcluirAlerta={handleExcluir}
+          onChangeName={handleChangeName}
+          onPressEdit={handleOpenEditModal}
+          scrollEnabled={false}
+        />
+      </View>
+      <View style={{ marginTop: 20, padding: 10 }}>
+         <TwoFactorActiveScreen />
       </View>
 
-      <AlertasModal
-        alertas={alertasAtivos}
-        onDesativarAlerta={handleDesativar}
-        onAtivarAlerta={handleAtivar}
-        onExcluirAlerta={handleExcluir}
-        onChangeName={handleChangeName}
-        onPressEdit={handleOpenEditModal}
-      />
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ width: 300, backgroundColor: "white", borderRadius: 10, padding: 20, alignItems: "center" }}>
-            <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 15 }}>Editar Nome do Alerta</Text>
-            
-            <TextInput
-              style={{ 
-                  width: '100%', 
-                  borderWidth: 1, 
-                  borderColor: '#ccc', 
-                  borderRadius: 5, 
-                  padding: 10, 
-                  marginBottom: 20 
-              }}
-              placeholder="Digite o novo nome"
-              value={novoNome}
-              onChangeText={setNovoNome}
-            />
+    </ScrollView>
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between", width: '100%' }}>
-              <Button title="Cancelar" color="red" onPress={() => setModalVisible(false)} />
-              <Button title="Salvar" onPress={handleSaveName} />
-            </View>
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={modalVisible}
+      onRequestClose={() => setModalVisible(false)}
+    >
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <View style={{ width: 300, backgroundColor: "white", borderRadius: 10, padding: 20, alignItems: "center" }}>
+          <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 15 }}>Editar Nome do Alerta</Text>
+          
+          <TextInput
+            style={{ 
+                width: '100%', 
+                borderWidth: 1, 
+                borderColor: '#ccc', 
+                borderRadius: 5, 
+                padding: 10, 
+                marginBottom: 20 
+            }}
+            placeholder="Digite o novo nome"
+            value={novoNome}
+            onChangeText={setNovoNome}
+          />
+
+          <View style={{ flexDirection: "row", justifyContent: "space-between", width: '100%' }}>
+            <Button title="Cancelar" color="red" onPress={() => setModalVisible(false)} />
+            <Button title="Salvar" onPress={handleSaveName} />
           </View>
         </View>
-      </Modal>
-    </View>
-  );
+      </View>
+    </Modal>
+
+  </View>
+);
 };

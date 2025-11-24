@@ -10,6 +10,7 @@ import HomeScreenWrapper from './src/screens/HomeScreen';
 import { TwoFactorScreenWrapper } from './src/components/auth/TwoFactorScreen';
 import BottomTabs from './src/components/navigation/BottomTabNavigator';
 import * as Notifications from 'expo-notifications';
+import TwoFactorSetupScreen from './src/components/config/TwoFactorSetupScreen';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -36,6 +37,14 @@ function AppRoutes() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={BottomTabs} />
+      <Stack.Screen 
+        name="TwoFactorSetup" 
+        component={TwoFactorSetupScreen} 
+        options={{
+            headerShown: false, 
+            animation: 'slide_from_right'
+        }}
+      />
     </Stack.Navigator>
   );
 }

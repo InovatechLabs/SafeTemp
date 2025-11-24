@@ -50,7 +50,7 @@ const AlertItem = ({ item, onDesativar, onAtivar, onExcluir, onChangeName, onPre
     >
       <View style={styles.itemContainer}>
               <Text style={styles.alertName}>
-            {item.nome}
+            {item.nome ? item.nome : `Alerta #${item.id}`}
           </Text>
         {/* STATUS */}
         <View style={styles.statusContainer}>
@@ -116,13 +116,14 @@ interface AlertasListProps {
   onExcluirAlerta: (id: number) => void;
   onChangeName: (id: number, novoNome: string) => void;
   onPressEdit: (id: number, nomeAtual: string | null | undefined) => void;
+  scrollEnabled?: boolean;
 
 }
 
-export default function AlertasModal({ alertas, onDesativarAlerta, onAtivarAlerta, onExcluirAlerta, onChangeName, onPressEdit }: AlertasListProps) {
+export default function AlertasModal({ alertas, onDesativarAlerta, onAtivarAlerta, onExcluirAlerta, onChangeName, onPressEdit, scrollEnabled = true }: AlertasListProps) {
   return (
 
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.modalView}>
 
           <View style={styles.modalHeader}>
@@ -130,9 +131,12 @@ export default function AlertasModal({ alertas, onDesativarAlerta, onAtivarAlert
 
           </View>
 
-          <FlatList
-            data={alertas}
-            keyExtractor={(item) => item.id.toString()}
+        <FlatList
+          data={alertas}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ flexGrow: 1 }}
+          scrollEnabled={scrollEnabled}
+          style={{ width: '100%' }}
             renderItem={({ item }) => (
               <AlertItem
                 item={item}
@@ -146,7 +150,7 @@ export default function AlertasModal({ alertas, onDesativarAlerta, onAtivarAlert
             ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
         </View>
-      </SafeAreaView>
+      </View>
   );
 }
 
@@ -162,7 +166,6 @@ const styles = StyleSheet.create({
   },
   modalView: {
     width: '100%',
-    maxHeight: '70%',
     backgroundColor: 'white',
     borderRadius: 20,
     padding: 20,
@@ -176,15 +179,17 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 logoContainer: { marginTop: 20, marginBottom: 20 },
+  
   modalHeader: {
-    flexDirection: 'row',
+     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333'
   },
   closeButton: {
     backgroundColor: '#E0E0E0',
@@ -200,7 +205,7 @@ logoContainer: { marginTop: 20, marginBottom: 20 },
     color: '#333',
   },
   itemContainer: {
-    paddingVertical: 15,
+    paddingVertical: 20,
   },
   extraContainer: {
     marginTop: 10,
@@ -220,8 +225,7 @@ logoContainer: { marginTop: 20, marginBottom: 20 },
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 10,
-    backgroundColor: '#f7f7f7',
-    padding: 5,
+    backgroundColor: '#ffffff',
     borderRadius: 4
   },
 
@@ -254,7 +258,13 @@ logoContainer: { marginTop: 20, marginBottom: 20 },
     color: '#555',
     lineHeight: 22,
   },
-container: { flex: 1, backgroundColor: '#f0f2f5', padding: 20, width: '100%' },
+container: {
+ 
+    width: '90%',      
+    alignSelf: 'center',
+    marginBottom: 20,   
+
+  },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   headerTitle: { fontSize: 26, fontWeight: 'bold', color: '#333' },

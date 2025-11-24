@@ -1,36 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { View, Dimensions, TouchableOpacity, Modal, Button, Text, StyleSheet } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { getHistory6h } from '../../../services/temperature';
-import { formatHour } from '../../utils/formatters/isoDate';
-import Orientation from 'react-native-orientation-locker';
 import { DataItem } from '../../utils/types/DataItem';
 
 interface Props {
-  data: {
-    records: DataItem[];
-  }
+  data: DataItem[];
 }
 
 const TemperatureChart: React.FC<Props> = ({ data }) => {
 
     const [modalVisible, setModalVisible] = useState(false);
-    const hasRecords = data?.records && data.records.length > 0;
+    const hasRecords = data && data.length > 0;
+
+    const formatTimeBRT = (timestamp: string | Date) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
 
  const chartData = hasRecords
     ? {
-        labels: data.records.map((item, index) => {
-          const date = new Date(item.timestamp);
-          const hours = date.getUTCHours();
-          const minutes = String(date.getUTCMinutes()).padStart(2, "0");
-
-        
-          return index % 10 === 0 ? `${hours}:${minutes}` : "";
+       labels: data.map((item, index) => {
+          return index % 10 === 0 ? formatTimeBRT(item.timestamp) : "";
         }),
         datasets: [
           {
-            data: data.records.map(item => Number(item.value)),
+            data: data.map(item => Number(item.value)),
           },
         ],
       }
@@ -43,23 +42,9 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
           },
         ],
       };
-
-
-
-  
-  const openFullscreen = () => {
-    setModalVisible(true);
-    Orientation.lockToLandscape(); 
-  };
-
-  const closeFullscreen = () => {
-    setModalVisible(false);
-    Orientation.lockToPortrait(); 
-  };
  
   return (
     <View style={styles.container}>
-      {/* Gráfico normal */}
       <LineChart
         data={chartData}
         width={Dimensions.get('window').width - 32}
@@ -69,21 +54,17 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
         style={styles.chart}
       />
 
-      {/* Botão para fullscreen */}
-      <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-        <Text style={styles.buttonText}>Ver em tela cheia</Text>
-      </TouchableOpacity>
-
-      {/* Modal fullscreen */}
       <Modal visible={modalVisible} animationType="slide">
         <View style={styles.modalContainer}>
           <LineChart
             data={chartData}
-            width={Dimensions.get('window').height} // largura da tela
-            height={Dimensions.get('window').width} // altura da tela
+            width={Dimensions.get('window').height}
+            height={Dimensions.get('window').width} 
             yAxisSuffix="°C"
             chartConfig={chartConfig}
             style={{ transform: [{ rotate: '90deg' }], marginVertical: 0 }}
+            withDots={false} 
+            withInnerLines={false}
           />
           <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
             <Text style={styles.closeText}>Fechar</Text>
@@ -95,14 +76,17 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
 };
 
 const chartConfig = {
-  backgroundColor: "#1E2923",
-  backgroundGradientFrom: "#4b2a59",
-  backgroundGradientTo: "#ce6e46",
+backgroundColor: "#ffffff",
+  backgroundGradientFrom: "#ffffff", 
+  backgroundGradientTo: "#ffffff",   
+  color: (opacity = 1) => `rgba(206, 110, 70, ${opacity})`, 
+  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, 
   decimalPlaces: 2,
-  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
   style: { borderRadius: 16 },
-  propsForDots: { r: "4", strokeWidth: "2", stroke: "#ffa726" },
+propsForDots: {
+    r: "0",
+    strokeWidth: "0"
+  }
 };
 
 const styles = StyleSheet.create({
