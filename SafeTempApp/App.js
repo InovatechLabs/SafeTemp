@@ -11,6 +11,7 @@ import { TwoFactorScreenWrapper } from './src/components/auth/TwoFactorScreen';
 import BottomTabs from './src/components/navigation/BottomTabNavigator';
 import * as Notifications from 'expo-notifications';
 import TwoFactorSetupScreen from './src/components/config/TwoFactorSetupScreen';
+import ExperimentDetailScreen from './src/screens/ExperimentDetailScreen';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -38,6 +39,15 @@ function AppRoutes() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={BottomTabs} />
       <Stack.Screen 
+        name="ExperimentDetail" 
+        component={ExperimentDetailScreen} 
+        options={{
+            headerShown: false,
+            animation: 'slide_from_bottom', 
+            gestureEnabled: true 
+        }}
+      />
+      <Stack.Screen 
         name="TwoFactorSetup" 
         component={TwoFactorSetupScreen} 
         options={{
@@ -50,7 +60,7 @@ function AppRoutes() {
 }
 
 function Router() {
-  const { userToken, isLoading } = useAuth();
+  const { userToken, isLoading, isGuest } = useAuth();
 
   if (isLoading) {
     return (
@@ -60,7 +70,7 @@ function Router() {
     );
   }
 
-  return userToken ? <AppRoutes /> : <AuthRoutes />;
+  return userToken || isGuest ? <AppRoutes /> : <AuthRoutes />;
 }
 
 export default function App() {

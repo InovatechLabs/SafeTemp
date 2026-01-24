@@ -21,7 +21,7 @@ import { DataItem, DataItemArray } from '../utils/types/DataItem';
 import api from '../../services/api';
 import styled from 'styled-components/native';
 import TemperatureChart from '../components/dashboard/TemperatureChart';
-import { getHistory6h } from '../../services/temperature';
+import { getHistory1h } from '../../services/temperature';
 import * as SecureStore from 'expo-secure-store';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { LineChart, PieChart } from 'react-native-chart-kit';
@@ -30,6 +30,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import stdb from '../../assets/stdashboard.png';
 import { Alert as AlertType } from '../utils/types/Alerts';
+import { Statistics } from '../utils/types/Statistics';
+import { StatCard } from '../components/dashboard/StatCard';
+import { ExperimentoAtivo } from '../utils/types/experiments';
+import { ExperimentModal } from '../components/dashboard/ExperimentModal';
+import { AxiosResponse } from 'axios';
 
 type RootStackParamList = {
   Home: undefined;
@@ -43,12 +48,12 @@ type HomeScreenNavigationProp = StackNavigationProp<
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
-  const { signOut } = useAuth(); 
+  const { signOut, isGuest } = useAuth(); 
 
   const [currentTemperature, setCurrentTemperature] = useState<DataItem | null>(null);
   const [history, setHistory] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ min: '--', max: '--', std: 0 });
+  const [stats, setStats] = useState({ min: '--', max: '--', std: 0  });
 
   const [modalVisible, setModalVisible] = useState(false);
   const [temperaturaMin, setTemperaturaMin] = useState("");
@@ -60,47 +65,74 @@ const HomeScreen = () => {
   const [checked, setChecked] = useState(true);
   const [isAlerting, setIsAlerting] = useState(false);
   const [chartLimits, setChartLimits] = useState<{min: number, max: number } | null>(null);
+  const [analytics, setAnalytics] = useState<Statistics['statistics'] | null>(null);
+  const [experimento, setExperimento] = useState<ExperimentoAtivo | null>(null);
+  const [expModalVisible, setExpModalVisible] = useState(false);
 
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [lastDataResponse, history1hResponse, history6hData, alertsResponse] = await Promise.all([
-        api.get('data/lastdata'),
-        api.get('data/history1h'),
-        getHistory6h(),
-        api.get<AlertType[]>('alerts/list')
+      const deviceMac = "10711434E3EC";
+
+const publicPromises = [
+      api.get('/data/lastdata'),
+      api.get('/data/history1h'), 
+      api.get(`/experiments/active/${deviceMac}`),
+    ];
+    
+    if (!isGuest) {
+     const responses = await Promise.all([
+    ...publicPromises,
+        api.get<AlertType[]>('alerts/list'),
       ]);
 
-      setCurrentTemperature(lastDataResponse.data.lastRecord);
+const lastDataRes = responses[0] as any;
+      const historyStatsRes = responses[1] as any;
+      const expRes = responses[2] as any;
+      const alertsRes = responses[3] as any;
 
-      const dataResponse = history6hData as unknown as DataItemArray;
-
-      if (dataResponse && dataResponse.records) {
-        setHistory(dataResponse.records)
-      } else {
-        if (Array.isArray(history6hData)) {
-          setHistory([]);
-        }
-      }
-
-      if (history1hResponse.data.statistics) {
+      setCurrentTemperature(lastDataRes.data.lastRecord);
+      setExperimento(expRes.data);
+ 
+      const historyData = historyStatsRes.data;
+      setHistory(historyData.records || []);
+      
+      if (historyData.statistics) {
+        setAnalytics(historyData.statistics);
         setStats({
-          min: history1hResponse.data.statistics.min,
-          max: history1hResponse.data.statistics.max,
-          std: history1hResponse.data.desvioPadrao,
-        })
-      }
-      const alerts = alertsResponse.data;
-      const activeAlert = alerts.find(a => a.ativo && a.temperatura_min != null && a.temperatura_max != null);
-
-      if (activeAlert) {
-        setChartLimits({
-          min: activeAlert.temperatura_min!,
-          max: activeAlert.temperatura_max!
+          min: historyData.statistics.min,
+          max: historyData.statistics.max,
+          std: historyData.statistics.desvioPadrao
         });
-      } else {
-        setChartLimits(null);
       }
+
+      const alerts = alertsRes.data || [];
+      const activeAlert = alerts.find((a: any) => a.ativo && a.temperatura_min != null && a.temperatura_max != null);
+      setChartLimits(activeAlert ? { min: activeAlert.temperatura_min, max: activeAlert.temperatura_max } : null);
+    } else {
+ const responses = await Promise.all(publicPromises);
+      
+      const lastDataRes = responses[0] as any;
+      const historyStatsRes = responses[1] as any;
+      const expRes = responses[2] as any;
+
+      setCurrentTemperature(lastDataRes.data.lastRecord);
+      
+      setExperimento(expRes.data || null);
+      
+      const historyData = historyStatsRes.data;
+      setHistory(historyData.records || []);
+      setChartLimits(null); 
+
+      if (historyData.statistics) {
+        setAnalytics(historyData.statistics);
+        setStats({
+          min: historyData.statistics.min,
+          max: historyData.statistics.max,
+          std: historyData.statistics.desvioPadrao
+        });
+      }
+    }
 
     } catch (error) {
       console.error("Erro ao atualizar dashboard:", error);
@@ -116,49 +148,7 @@ const HomeScreen = () => {
   );
 
 
-  const getPieData = (data: DataItem[], min: number | null, max: number | null) => {
-    if (!data || data.length === 0 || min === null || max === null) return [];
-
-    let below = 0;
-    let ideal = 0;
-    let above = 0;
-
-    data.forEach(item => {
-      const val = parseFloat(item.value);
-
-      if (val < min) below++;
-      else if (val > max) above++;
-      else ideal++;
-    });
-
-    const total = below + ideal + above;
-    if (total === 0) return [];
-
-    return [
-      {
-        name: `Abaixo (<${min}°)`,
-        population: below,
-        color: "#4FC3F7",
-        legendFontColor: "#7F7F7F",
-        legendFontSize: 12
-      },
-      {
-        name: "Na Meta",
-        population: ideal,
-        color: "#4CAF50",
-        legendFontColor: "#7F7F7F",
-        legendFontSize: 12
-      },
-      {
-        name: `Acima (>${max}°)`,
-        population: above,
-        color: "#FF5252",
-        legendFontColor: "#7F7F7F",
-        legendFontSize: 12
-      }
-    ].filter(item => item.population > 0);
-  };
-
+ 
   const getTimeDifference = (timestamp: string | undefined) => {
   if (!timestamp) return "Desconhecido";
   
@@ -239,6 +229,14 @@ const getStability = (std: number) => {
     signOut();
   };
 
+  const handleExperimentDetails = () => {
+    navigation.navigate('ExperimentDetail', { 
+  experimento, 
+  history, 
+  currentTemp: currentTemperature 
+});
+  }
+
   const normalGradient = ['#2A2D5D', '#4B2A59'] as const;
   const normalStatusBg = '#4CAF50'; 
   const normalIcon = "thermometer";
@@ -251,6 +249,14 @@ const getStability = (std: number) => {
   const currentStatusBg = isAlerting ? alertStatusBg : normalStatusBg;
   const currentStatusText = isAlerting ? "ALERTA CRÍTICO" : "Monitoramento Ativo";
   const currentIcon = isAlerting ? alertIcon : normalIcon;
+
+const tempAtual = currentTemperature ? parseFloat(currentTemperature.value) : 0;
+const isOutOfRange = experimento && 
+    (tempAtual < experimento.temp_min_ideal || tempAtual > experimento.temp_max_ideal);
+
+const experimentGradient = isOutOfRange 
+    ? (['#FF4B2B', '#FF416C'] as const) // Vermelho Alerta
+    : (['#6A11CB', '#2575FC'] as const); // Azul/Roxo Experimento
 
   return (
     <SafeAreaView style={styles.container}>
@@ -273,47 +279,76 @@ const getStability = (std: number) => {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={loadDashboardData} />}
         showsVerticalScrollIndicator={false}
       >
+<TouchableOpacity 
+  activeOpacity={0.9} 
+  onPress={experimento ? handleExperimentDetails : undefined}
+>
+<LinearGradient
+    colors={experimento ? experimentGradient : currentGradient}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={[styles.heroCard, isOutOfRange && styles.pulseEffect]}
+  >
+<View style={styles.heroHeader}>
+      <View style={styles.statusBadge}>
+        <View style={[styles.statusDot, { backgroundColor: experimento ? '#4CAF50' : currentStatusBg }]} />
+        <Text style={styles.statusText}>
+          {experimento ? 'Experimento em Curso' : currentStatusText}
+        </Text>
+      </View>
+      <MaterialCommunityIcons 
+        name={experimento ? "beaker-outline" : currentIcon} 
+        size={22} 
+        color="#FFF" 
+        style={{ opacity: 0.8 }} 
+        onPress={handleExperimentDetails}
+      />
+    </View>
 
-        <LinearGradient
-          colors={currentGradient} 
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroCard}
-        >
-        <View style={styles.heroHeader}>
-            <View style={styles.statusBadge}>      
-               <View style={[styles.statusDot, { backgroundColor: currentStatusBg }]} />
-               <Text style={styles.statusText}>{currentStatusText}</Text>
-            </View>
-            <MaterialCommunityIcons name={currentIcon} size={24} color="#FFF" style={{ opacity: 0.8 }} />
-            </View>
+    {experimento && (
+      <View style={styles.experimentInfo}>
+        <Text style={styles.expTitle}>{experimento.nome}</Text>
+        <Text style={styles.expResponsavel}>Por: {experimento.responsavel.name}</Text>
+      </View>
+    )}
 
-          <View style={styles.tempContainer}>
-            {loading && !currentTemperature ? (
-                <ActivityIndicator color="#FFF" size="large" />
-            ) : (
-                <Text style={styles.tempValue}>
-                {currentTemperature ? parseFloat(currentTemperature.value).toFixed(1) : '--'}
-                <Text style={styles.tempUnit}>°C</Text>
-                </Text>
-            )}
-            <Text style={styles.tempLabel}>Temperatura Atual</Text>
-          </View>
+<View style={styles.tempContainer}>
+      <Text style={styles.tempValue}>
+        {currentTemperature ? tempAtual.toFixed(1) : '--'}
+        <Text style={styles.tempUnit}>°C</Text>
+      </Text>
+      <Text style={styles.tempLabel}>Temperatura Atual</Text>
+    </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Mínima (1h)</Text>
-                <Text style={styles.statValue}>{stats.min}°</Text>
+    {experimento && (
+        <View style={styles.rangeContainer}>
+            <View style={styles.rangeLabels}>
+                <Text style={styles.rangeText}>{experimento.temp_min_ideal}°C</Text>
+                <Text style={styles.rangeText}>Ideal</Text>
+                <Text style={styles.rangeText}>{experimento.temp_max_ideal}°C</Text>
             </View>
-            <View style={styles.verticalDivider} />
-            <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Máxima (1h)</Text>
-                <Text style={styles.statValue}>{stats.max}°</Text>
+            <View style={styles.rangeBarBase}>
+                <View style={[
+                    styles.rangeIndicator, 
+                    { left: `${((tempAtual - experimento.temp_min_ideal) / (experimento.temp_max_ideal - experimento.temp_min_ideal)) * 100}%` }
+                ]} />
             </View>
-          </View>
+        </View>
+    )}
+
+<View style={styles.statsRow}>
+      <View style={styles.statItem}>
+        <Text style={styles.statLabel}>{experimento ? 'Mín. Ideal' : 'Mínima (1h)'}</Text>
+        <Text style={styles.statValue}>{experimento ? experimento.temp_min_ideal : stats.min}°</Text>
+      </View>
+      <View style={styles.verticalDivider} />
+      <View style={styles.statItem}>
+        <Text style={styles.statLabel}>{experimento ? 'Máx. Ideal' : 'Máxima (1h)'}</Text>
+        <Text style={styles.statValue}>{experimento ? experimento.temp_max_ideal : stats.max}°</Text>
+      </View>
+    </View>
                     <View style={styles.sensorStatusContainer}>
-            
-            {/* Lado Esquerdo: Tempo */}
+
             <View style={styles.sensorInfoItem}>
                 <MaterialCommunityIcons name="clock-time-four-outline" size={20} color="#666" />
               <View style={{ marginLeft: 10 }}>
@@ -341,20 +376,44 @@ const getStability = (std: number) => {
 
         </View>
         </LinearGradient>
-
+</TouchableOpacity>
         <TouchableOpacity 
-            style={styles.actionButton}
+            style={[styles.actionButton, { marginTop: -10, borderLeftWidth: 4, borderLeftColor: isGuest ? '#6e6e6e' : '#6A11CB' }]}
             onPress={() => setModalVisible(true)}
+            disabled={isGuest}
         >
-            <Ionicons name="settings-outline" size={20} color="#333" />
-            <Text style={styles.actionButtonText}>Configurar Alertas</Text>
+            <Ionicons name="settings-outline" size={20} color={isGuest ? "#6e6e6e" : "#6A11CB"} />
+            <Text style={styles.actionButtonText}>
+                {isGuest ? (
+                  <Text style={{ color: '#6e6e6e'}}>Crie uma conta para configurar alertas</Text>
+                ) : (
+                  <Text>Configurar alertas</Text>
+                )}
+              </Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
+        {!experimento && (
+    <TouchableOpacity 
+        style={[styles.actionButton, { marginTop: -10, borderLeftWidth: 4, borderLeftColor: isGuest ? '#6e6e6e' : '#6A11CB' }]}
+        onPress={() => setExpModalVisible(true)}
+        disabled={isGuest}
+    >
+        <MaterialCommunityIcons name="beaker-plus-outline" size={22} color={isGuest ? "#6e6e6e" : "#6A11CB"} />
+        <Text style={styles.actionButtonText}>
+           {isGuest ? (
+                  <Text style={{ color: '#6e6e6e'}}>Crie uma conta para iniciar experimentos</Text>
+                ) : (
+                  <Text>Iniciar experimento</Text>
+                )}
+          </Text>
+        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+    </TouchableOpacity>
+)}
 
         <View style={styles.chartSection}>
           <View style={styles.sectionHeader}>
              <Text style={styles.sectionTitle}>Histórico Recente</Text>
-             <Text style={styles.sectionSubtitle}>Últimas horas</Text>
+             <Text style={styles.sectionSubtitle}>Última hora</Text>
           </View>
           
           <View style={styles.chartCard}>
@@ -369,45 +428,84 @@ const getStability = (std: number) => {
           </View>
         </View>
 
-        <View style={styles.chartSection}>
-          <View style={styles.sectionHeader}>
-             <Text style={styles.sectionTitle}>Distribuição de Temperatura</Text>
-          </View>
-          
-<View style={styles.chartCard}>
-   {history.length > 0 && chartLimits ? (
-      <PieChart
-        data={getPieData(history, chartLimits.min, chartLimits.max)}
-        width={Dimensions.get('window').width - 40}
-        height={220}
-        chartConfig={{
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          decimalPlaces: 0,
-        }}
-        accessor={"population"}
-        backgroundColor={"transparent"}
-        paddingLeft={"15"}
-        center={[10, 0]}
-        absolute
-        hasLegend={true}
-      />
-   ) : (
-      <View style={{ padding: 30, alignItems: 'center' }}>
-          {!chartLimits ? (
-              <>
-                <MaterialCommunityIcons name="cog-off" size={40} color="#ccc" />
-                <Text style={{ color: '#666', textAlign: 'center', marginTop: 10 }}>
-                    Nenhum alerta ativo.{'\n'}
-                    Configure os limites min/max para visualizar a eficiência.
+        <View style={styles.sectionContainer}>
+    <Text style={styles.sectionTitle}>Análise Técnica (1h)</Text>
+    <Text style={styles.sectionSubtitle}>Indicadores estatísticos de qualidade</Text>
+
+    <View style={styles.statsGridCard}>
+
+        <View style={styles.quickSummaryRow}>
+            <View style={styles.quickSummaryItem}>
+                <Text style={styles.quickLabel}>Média</Text>
+                <Text style={styles.quickValue}>
+                    {analytics?.media ? analytics.media.toFixed(1) : '--'}°C
                 </Text>
-              </>
-          ) : (
-              <Text style={{ color: '#999' }}>Aguardando dados...</Text>
-          )}
-      </View>
-   )}
-</View>
+            </View>
+            <View style={styles.verticalDivider} />
+            <View style={styles.quickSummaryItem}>
+                <Text style={styles.quickLabel}>Mínima</Text>
+                <Text style={styles.quickValue}>
+                    {analytics?.min ? analytics.min.toFixed(1) : '--'}°C
+                </Text>
+            </View>
+            <View style={styles.verticalDivider} />
+            <View style={styles.quickSummaryItem}>
+                <Text style={styles.quickLabel}>Máxima</Text>
+                <Text style={styles.quickValue}>
+                    {analytics?.max ? analytics.max.toFixed(1) : '--'}°C
+                </Text>
+            </View>
         </View>
+
+        <View style={styles.horizontalDivider} />
+
+        <View style={styles.cardsGrid}>
+            {(() => {
+                const outliers = analytics?.totalOutliers || 0;
+                const isCrit = outliers > 0;
+                return (
+                    <StatCard 
+                        label="Outliers"
+                        value={outliers}
+                        subValue={isCrit ? "Detectados" : "Nenhum"}
+                        iconName={isCrit ? "alert-octagram-outline" : "check-decagram-outline"}
+                        color={isCrit ? "#FF4444" : "#4CAF50"}
+                        bgColor={isCrit ? "#FFF5F5" : "#F0FFF4"}
+                    />
+                );
+            })()}
+
+            {(() => {
+                const cv = analytics?.CVOutlier || 0;       
+                const isHighVar = cv > 10;
+
+                return (
+                    <StatCard 
+                        label="Coef. Variação"
+                        value={`${cv.toFixed(1)}%`}
+                        iconName="chart-bell-curve-cumulative"
+                        color={isHighVar ? "#FFC107" : "#2A2D5D"}
+                    />
+                );
+            })()}
+
+            <StatCard 
+                label="Desvio Padrão"
+                value={`±${analytics?.desvioPadrao?.toFixed(2) || '0.00'}`}
+                iconName="sigma"
+                color="#666"
+            />
+
+    
+            <StatCard 
+                label="Variância"
+                value={analytics?.variancia?.toFixed(2) || '0.00'}
+                iconName="function-variant"
+                color="#666"
+            />
+        </View>
+    </View>
+</View>
 
       </ScrollView>
 
@@ -470,7 +568,11 @@ const getStability = (std: number) => {
           </ScrollView>
         </View>
       </Modal>
-
+            <ExperimentModal 
+  visible={expModalVisible} 
+  onClose={() => setExpModalVisible(false)} 
+  onSuccess={loadDashboardData} 
+/>
     </SafeAreaView>
   );
 };
@@ -541,6 +643,106 @@ sensorStatusContainer: {
     width: 1,
     backgroundColor: '#E0E0E0',
     marginHorizontal: 10,
+  },
+  statsGridCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  experimentInfo: {
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  expTitle: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  expResponsavel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  rangeContainer: {
+    marginTop: 15,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  rangeLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  rangeText: {
+    color: '#FFF',
+    fontSize: 10,
+    opacity: 0.8,
+  },
+  rangeBarBase: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+    position: 'relative',
+  },
+  rangeIndicator: {
+    width: 10,
+    height: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 5,
+    position: 'absolute',
+    top: -3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+  },
+  pulseEffect: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  quickSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  quickSummaryItem: {
+    alignItems: 'center',
+  },
+  quickLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
+  },
+  quickValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  verticalDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#E0E0E0',
+  },
+  horizontalDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginBottom: 20,
+    marginHorizontal: -20,
+  },
+  cardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  sectionContainer: {
+    marginTop: 25,
+    marginBottom: 30,
   },
   heroCard: {
     borderRadius: 24,
@@ -616,11 +818,6 @@ sensorStatusContainer: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  verticalDivider: {
-    width: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  // --- ACTION BUTTON ---
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -657,10 +854,13 @@ sensorStatusContainer: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+    margin: 5
   },
   sectionSubtitle: {
     fontSize: 14,
     color: '#999',
+    marginLeft: 5,
+    marginBottom: 5
   },
   chartCard: {
     backgroundColor: '#FFF',
@@ -679,8 +879,6 @@ sensorStatusContainer: {
     justifyContent: 'center',
     alignItems: 'center'
   },
-
-  // --- ESTILOS DO MODAL (Originais do seu arquivo styles.ts) ---
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -775,7 +973,7 @@ sensorStatusContainer: {
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#ce6e46', // Usando a cor da sua identidade
+    backgroundColor: '#ce6e46', 
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',

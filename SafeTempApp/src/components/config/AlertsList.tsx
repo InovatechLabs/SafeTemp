@@ -80,6 +80,9 @@ const AlertItem = ({ item, onDesativar, onAtivar, onExcluir, onChangeName, onPre
             <Text style={styles.extraText}>
               Notificação ativa: {item.notificacaoAtiva ? "Sim" : "Não"}
             </Text>
+              <Text style={styles.extraText}>
+              Nota: {item.nota ? item.nota : 'Sem nota disponível'}
+            </Text>
           </View>
         )}
         <View style={styles.buttonContainer}>
@@ -91,10 +94,11 @@ const AlertItem = ({ item, onDesativar, onAtivar, onExcluir, onChangeName, onPre
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.desativarButton]}
-            onPress={() => onDesativar(item.id)}
-            disabled={!item.ativo}
+            onPress={() => item.ativo ? onDesativar(item.id) : onAtivar(item.id)}
           >
-            <Text style={styles.buttonText}>Desativar</Text>
+            <Text style={styles.buttonText}>
+              {item.ativo ? 'Desativar' : 'Ativar'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity

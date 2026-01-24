@@ -54,7 +54,7 @@ useFocusEffect(
     );
 
     try {
-      await api.put(`alerts/disable/${id}`);
+      await api.patch(`alerts/disable/${id}`);
       carregarAlertas(); 
     } catch (error) {
       console.error("Erro ao desativar alerta:", error);
@@ -68,7 +68,7 @@ useFocusEffect(
       );
 
     try {
-      await api.put(`alerts/enable/${id}`);
+      await api.patch(`alerts/enable/${id}`);
       carregarAlertas();
     } catch (error) {
       console.error("Erro ao ativar alerta:", error);

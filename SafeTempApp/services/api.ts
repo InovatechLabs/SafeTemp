@@ -2,7 +2,8 @@ import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
 
 const api = axios.create({
-  baseURL: `https://safetemp-backend.onrender.com/api/`,
+//  baseURL: `https://st-api.up.railway.app/api/`,
+baseURL: `http://192.168.15.6:3000/api/`,
   withCredentials: true
 });
 

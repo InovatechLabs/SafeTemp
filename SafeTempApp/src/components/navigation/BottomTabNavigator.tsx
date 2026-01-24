@@ -10,7 +10,7 @@ import ProfileScreen from '../../screens/ProfileScreen';
 import dashicon from '../../../assets/dashboard.png';
 import historyicon from '../../../assets/history.png';
 import settingsicon from '../../../assets/settings.png';
-import profileicon from '../../../assets/profile.png';
+import profileicon from '../../../assets/info.png';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -86,7 +86,7 @@ export default function BottomTabs() {
           name="Perfil"
           component={ProfileScreen}
           options={{
-            tabBarLabel: ({ color }) => <Text style={{ color }}>Perfil</Text>,
+            tabBarLabel: ({ color }) => <Text style={{ color }}>Sobre</Text>,
             tabBarIcon: ({ color, size }) => (
               <Image source={profileicon} style={{ width: size, height: size, tintColor: color }} />
             ),

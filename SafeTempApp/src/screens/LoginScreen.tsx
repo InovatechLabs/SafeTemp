@@ -20,6 +20,8 @@ import { registerForPushNotificationsAsync } from '../utils/notifications/notifi
 import axios from 'axios';
 import api from '../../services/api';
 import * as SecureStore from 'expo-secure-store';
+import { GuestAccessModal } from '../components/auth/guest/GuestAccessModal';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 
 const logoImage = require('../../assets/logost.png');
 
@@ -36,6 +38,33 @@ export const ButtonTouchable = styled(TouchableOpacity)`
   margin-top: 20px;
 `;
 
+export const GuestButtonTouchable = styled(TouchableOpacity)`
+  margin-top: 25px;
+  width: 80%; 
+  align-self: center;
+  border-radius: 16px;
+  overflow: hidden;
+`;
+
+export const GuestButtonContainer = styled.View`
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 14px 20px;
+  border-width: 1.5px;
+  border-color: rgba(76, 102, 159, 0.4); 
+  border-style: dashed;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+`;
+
+export const GuestText = styled.Text`
+  color: #4c669f;
+  font-size: 15px;
+  font-weight: 600;
+  margin-left: 8px;
+`;
+
 export const GradientButton = styled.View`
   background-color: #4b2a59; /* fallback para mobile */
   padding: 12px 30px;
@@ -48,7 +77,20 @@ const LoginScreen = ({ navigation }: any) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
-  const { signIn } = useAuth();
+  const { signIn, enterAsGuest } = useAuth();
+  const [showGuestModal, setShowGuestModal] = useState(false);  
+
+  const handleGuestAccess = async () => {
+  const hasSeenPopup = await SecureStore.getItemAsync('guest_popup_viewed');
+
+  const proceed = () => enterAsGuest();
+
+  if (hasSeenPopup === 'true') {
+    proceed();
+  } else {
+    setShowGuestModal(true);
+  }
+};
 
 const handleLogin = async () => {
     if (!email || !password) {
@@ -126,6 +168,24 @@ const handleLogin = async () => {
             </Text>
           </TouchableOpacity>
         </View>
+ <GuestButtonTouchable 
+  onPress={handleGuestAccess}
+  activeOpacity={0.7}
+>
+  <GuestButtonContainer>
+    <MaterialCommunityIcons name="account-search-outline" size={20} color="#4c669f" />
+    <GuestText>Acessar como Visitante</GuestText>
+  </GuestButtonContainer>
+</GuestButtonTouchable>
+<GuestAccessModal 
+    visible={showGuestModal}
+    onClose={() => setShowGuestModal(false)}
+    onConfirm={async () => {
+      await SecureStore.setItemAsync('guest_popup_viewed', 'true');
+      setShowGuestModal(false);
+      enterAsGuest(); 
+    }}
+  />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

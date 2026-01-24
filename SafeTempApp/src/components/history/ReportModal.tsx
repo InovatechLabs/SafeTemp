@@ -169,6 +169,45 @@ export default function ReportModal({ visible, onClose, reportData }: ReportModa
     }
   };
 
+  const handleShare = async (id: string) => {
+
+    if (!id) {
+      Alert.alert("Erro", "ID do relatório inválido.");
+      return;
+    }
+
+      const destination = new Directory(Paths.cache, 'shared');
+      const pdfUrl = `${api.defaults.baseURL}reports/reportpdf/${id}`;
+      try {
+
+        if (!destination.exists) {
+          destination.create();
+        }
+
+        const destinationFile = new File(destination, `relatorio_${id}_safetemp.pdf`);
+        if (destinationFile.exists) {
+          destinationFile.delete();
+        }
+
+        const output = await File.downloadFileAsync(pdfUrl, destinationFile);
+        if (output) {
+          if (!(await Sharing.isAvailableAsync())) {
+            Alert.alert("Erro", "Compartilhamento indisponível.");
+            return;
+          }
+
+          await Sharing.shareAsync(output.uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: `Baixar Relatório ${id}`
+          });
+        }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível compartilhar o PDF.");
+    } 
+    
+  }
+
   return (
     <Modal
       animationType="slide"
@@ -295,7 +334,11 @@ export default function ReportModal({ visible, onClose, reportData }: ReportModa
                   </Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+                <TouchableOpacity 
+                style={styles.actionBtn} 
+                activeOpacity={0.7}
+                onPress={() => handleShare(id)}
+                >
                   <View style={[styles.iconCircle, { backgroundColor: '#E3F2FD' }]}>
                     <MaterialCommunityIcons name="share-variant" size={24} color="#1565C0" />
                   </View>

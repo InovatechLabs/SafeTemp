@@ -12,15 +12,24 @@ const AuthContext = createContext<AuthContextProps | null>(null);
 const AuthProvider = ({ children }: any) => {
   const [userToken, setUserToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
+
+const enterAsGuest = async () => {
+    await SecureStore.setItemAsync("isGuestMode", "true"); // Salva no disco
+    setIsGuest(true);
+  };
 
 
   useEffect(() => {
     async function loadToken() {
       try {
         const token = await getItem("userToken");
+        const guestStatus = await SecureStore.getItemAsync("isGuestMode");
         if (token) {
           api.defaults.headers.Authorization = `Bearer ${token}`;
           setUserToken(token);
+        } else if (guestStatus === 'true') {
+          setIsGuest(true);
         }
       } catch (error) {
         console.error("Erro ao carregar token:", error);
@@ -80,9 +89,10 @@ const AuthProvider = ({ children }: any) => {
   const signOut = async () => {
     try {
       await deleteItem("userToken");
+      await SecureStore.deleteItemAsync("isGuestMode");
       delete api.defaults.headers.Authorization;
       setUserToken(null);
-
+      setIsGuest(false);
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }
@@ -98,8 +108,10 @@ const AuthProvider = ({ children }: any) => {
       value={{
         userToken,
         isLoading,
+        isGuest,
         signIn,
         signOut,
+        enterAsGuest, 
         finalizeLogin,
       }}
     >

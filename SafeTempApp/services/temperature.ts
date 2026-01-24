@@ -4,7 +4,7 @@ import api from './api';
 import { DataItem, DataItemArray } from '../src/utils/types/DataItem';
 
 
-export const getHistory6h = async (): Promise<DataItem[]> => {
+export const getHistory1h = async (): Promise<DataItem[]> => {
 
     try {
         const response = await axios.get<DataItem[]>(`${api.defaults.baseURL}data/history1h`, {

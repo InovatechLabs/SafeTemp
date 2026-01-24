@@ -6,4 +6,6 @@ export interface AuthContextProps {
   signIn: (email: string, password: string) => Promise<SignInResult>;
   signOut: () => Promise<void>;
   finalizeLogin: (token: string) => void;
+  isGuest: boolean;     
+  enterAsGuest: () => void;
 }
