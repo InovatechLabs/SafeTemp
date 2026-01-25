@@ -13,6 +13,7 @@ import ReportModal from '../components/history/ReportModal';
 import api from '../../services/api';
 import { ReportStats, ReportUIModel } from '../utils/types/reports';
 import SearchReports from '../components/history/SearchReports';
+import { PublicExperimentsList } from '../components/history/PublicExperimentsList';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -24,6 +25,7 @@ const TemperatureHistoryScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportsList, setReportsList] = useState<ReportUIModel[]>([]);
+  const [activeTab, setActiveTab] = useState<'geral' | 'experimentos'>('geral');
 
   const handleOpenReport = (report: any) => {
   setSelectedReport(report);
@@ -194,81 +196,101 @@ const avg = (campo: keyof DataItem): number => {
   return parseFloat((sum / arr.length).toFixed(2));
 };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ alignItems: 'center', paddingBottom: 80 }} // 👈 espaço extra pro bottom tab
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.logoContainer}>
-          <Logo source={historyst} />
-        </View>
-        <View style={styles.headerContainer}>
-
-          <Text style={styles.headerTitle}>📑 Relatórios do dia</Text>
-          <View style={styles.separator} />
-        </View>
-
-        <ReportsList
-          onPressReport={handleOpenReport}
-          data={reportsList}
-          loading={loading}
-        />
-
-        <View style={{ padding: 5 }}>
-          <ReportModal visible={modalVisible}
-            onClose={() => setModalVisible(false)}
-            reportData={selectedReport} />
-        </View>
-
-       <SearchReports 
-            onSearchSuccess={(novosRelatorios) => setReportsList(novosRelatorios)}
-            onLoading={(isLoading) => setLoading(isLoading)}
-        />
-
-        <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>📜 Histórico de Temperatura</Text>
-        <View style={styles.separator} />
+ return (
+  <SafeAreaView style={styles.safeArea}>
+    <StatusBar barStyle="light-content" />
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ alignItems: 'center', paddingBottom: 80 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.logoContainer}>
+        <Logo source={historyst} />
       </View>
-      
-      <View style={{ display: 'flex',  flexDirection: 'column', width: '90%', backgroundColor: '#f3f3f3', padding: 12, borderRadius: 12 }}>
-        <View style={styles.generalInfoContainer}>
-          <Text style={styles.paragraph}>Selecione uma data para visualização dos dados. Gráficos gerados 
-            com dados do dia inteiro tendem a ser menos legíveis e demoram mais para carregar.
-          </Text>
-        </View>
-        <DateInput value={date} onChange={setDate} placeholder="Data do evento" />
-        <TouchableOpacity>
-          <ButtonTouchable onPress={fetchHistory} disabled={loading} activeOpacity={0.8}>
-            <GradientButton>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-                  Pesquisar
-                </Text>
-              )}
-            </GradientButton>
-          </ButtonTouchable>
+
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeTab === 'geral' && styles.activeTabButton]}
+          onPress={() => setActiveTab('geral')}
+        >
+          <Text style={[styles.tabText, activeTab === 'geral' && styles.activeTabText]}>Geral</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.tabButton, activeTab === 'experimentos' && styles.activeTabButton]}
+          onPress={() => setActiveTab('experimentos')}
+        >
+          <Text style={[styles.tabText, activeTab === 'experimentos' && styles.activeTabText]}>Experimentos</Text>
         </TouchableOpacity>
       </View>
 
-      <LineChart
-        data={chartData}
-        width={screenWidth * 0.9}
-        height={250}
-        chartConfig={chartConfig}
-        bezier
-        style={styles.chart}
+      {activeTab === 'geral' ? (
+        <>
+          <View style={styles.headerContainer}>
+            <Text style={styles.headerTitle}>📑 Relatórios do dia</Text>
+            <View style={styles.separator} />
+          </View>
+
+          <ReportsList
+            onPressReport={handleOpenReport}
+            data={reportsList}
+            loading={loading}
+          />
+
+          <SearchReports 
+            onSearchSuccess={(novosRelatorios) => setReportsList(novosRelatorios)}
+            onLoading={(isLoading) => setLoading(isLoading)}
+          />
+
+          <View style={styles.headerContainer}>
+            <Text style={styles.headerTitle}>📜 Histórico de Temperatura</Text>
+            <View style={styles.separator} />
+          </View>
+          
+          <View style={{ width: '90%', backgroundColor: '#f3f3f3', padding: 12, borderRadius: 12 }}>
+            <View style={styles.generalInfoContainer}>
+              <Text style={styles.paragraph}>
+                Selecione uma data para visualização dos dados...
+              </Text>
+            </View>
+            <DateInput value={date} onChange={setDate} placeholder="Data do evento" />
+            <TouchableOpacity>
+              <ButtonTouchable onPress={fetchHistory} disabled={loading} activeOpacity={0.8}>
+                <GradientButton>
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Pesquisar</Text>}
+                </GradientButton>
+              </ButtonTouchable>
+            </TouchableOpacity>
+          </View>
+
+          <LineChart
+            data={chartData}
+            width={screenWidth * 0.9}
+            height={250}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+          />
+
+          <View style={styles.infoCardsContainer}>
+            <InfoCard icon="thermometer-half" label="Temp. Média" value={avg("value")} />
+            <InfoCard icon="sun" label="Máxima Registrada" value={max("value")} />
+            <InfoCard icon="snowflake" label="Mínima Registrada" value={min("value")} />
+          </View>
+        </>
+      ) : (
+        /* 3. CONTEÚDO DA ABA EXPERIMENTOS */
+        <View style={{ width: '90%' }}>
+           <PublicExperimentsList /> 
+        </View>
+      )}
+
+      <ReportModal 
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        reportData={selectedReport} 
       />
 
-      <View style={styles.infoCardsContainer}>
-        <InfoCard icon="thermometer-half" label="Temp. Média" value={avg("value")} />
-        <InfoCard icon="sun" label="Máxima Registrada" value={max("value")} />
-        <InfoCard icon="snowflake" label="Mínima Registrada" value={min("value")} />
-      </View>
     </ScrollView>
   </SafeAreaView>
 );
@@ -308,11 +330,50 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 16,
   },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 25,
+    marginHorizontal: 20,
+    marginVertical: 15,
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 21,
+  },
+  activeTabButton: {
+    backgroundColor: '#4A148C',
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#fff',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 20,
+    marginTop: 10,
+    color: '#333',
+  },
   infoCardsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '90%',
     marginTop: 20,
+  },
+    buttonText: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
   },
   generalInfoContainer: {
     borderLeftColor: '4px solid #ce6e46',

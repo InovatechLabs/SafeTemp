@@ -14,3 +14,18 @@ export const formatDateForAPI = (date: Date) => {
   
   return `${year}-${month}-${day}`;
 };
+
+export const formatUTCtoBRT = (utcDateString: string | Date) => {
+  if (!utcDateString) return "";
+
+  const date = new Date(utcDateString);
+
+  const brtDate = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+  const dia = String(brtDate.getUTCDate()).padStart(2, '0');
+  const mes = String(brtDate.getUTCMonth() + 1).padStart(2, '0');
+  const ano = brtDate.getUTCFullYear();
+  const horas = String(brtDate.getUTCHours()).padStart(2, '0');
+  const minutos = String(brtDate.getUTCMinutes()).padStart(2, '0');
+
+  return `${dia}/${mes}/${ano} às ${horas}:${minutos}`;
+};
