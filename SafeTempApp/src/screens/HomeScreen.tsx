@@ -17,14 +17,12 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DataItem, DataItemArray } from '../utils/types/DataItem';
+import { DataItem } from '../utils/types/DataItem';
 import api from '../../services/api';
 import styled from 'styled-components/native';
 import TemperatureChart from '../components/dashboard/TemperatureChart';
-import { getHistory1h } from '../../services/temperature';
 import * as SecureStore from 'expo-secure-store';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { LineChart, PieChart } from 'react-native-chart-kit';
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -34,7 +32,7 @@ import { Statistics } from '../utils/types/Statistics';
 import { StatCard } from '../components/dashboard/StatCard';
 import { ExperimentoAtivo } from '../utils/types/experiments';
 import { ExperimentModal } from '../components/dashboard/ExperimentModal';
-import { AxiosResponse } from 'axios';
+import Icon from 'react-native-vector-icons/FontAwesome5';
 
 type RootStackParamList = {
   Home: undefined;
@@ -54,6 +52,8 @@ const HomeScreen = () => {
   const [history, setHistory] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ min: '--', max: '--', std: 0  });
+  const [atual, setAtual] = useState(0);
+  const [trend, setTrend] = useState({ icon: 'minus', color: '#adb5bd', text: 'Estável' });
 
   const [modalVisible, setModalVisible] = useState(false);
   const [temperaturaMin, setTemperaturaMin] = useState("");
@@ -90,8 +90,24 @@ const lastDataRes = responses[0] as any;
       const historyStatsRes = responses[1] as any;
       const expRes = responses[2] as any;
       const alertsRes = responses[3] as any;
+      const newRecord = lastDataRes.data.lastRecord;
 
-      setCurrentTemperature(lastDataRes.data.lastRecord);
+      setCurrentTemperature((prevRecord: any) => {
+  if (prevRecord && newRecord) {
+    const newVal = Number(newRecord.value);
+    const prevVal = Number(prevRecord.value);
+
+    if (newVal > prevVal) {
+      setTrend({ icon: 'chevron-up', color: '#ff6b6b', text: 'Subindo' });
+    } else if (newVal < prevVal) {
+      setTrend({ icon: 'chevron-down', color: '#4dabf7', text: 'Descendo' });
+    } else {
+      setTrend({ icon: 'minus', color: '#adb5bd', text: 'Estável' });
+    }
+  }
+  return newRecord; 
+});
+
       setExperimento(expRes.data);
  
       const historyData = historyStatsRes.data;
@@ -148,6 +164,18 @@ const lastDataRes = responses[0] as any;
   );
 
 
+  const updateTemperature = (newTemp: number) => {
+    setAtual((prevTemp) => {
+      if (prevTemp !== 0) {
+        if (newTemp > prevTemp) setTrend({ icon: 'chevron-up', color: '#ff6b6b', text: 'Subindo' });
+         else if (newTemp < prevTemp) setTrend({ icon: 'chevron-down', color: '#4dabf7', text: 'Descendo' });
+         else {
+          setTrend({ icon: 'minus', color: '#adb5bd', text: 'Estável' });
+        }
+      }
+      return newTemp;
+    })
+  }
  
   const getTimeDifference = (timestamp: string | undefined) => {
   if (!timestamp) return "Desconhecido";
@@ -318,7 +346,14 @@ const experimentGradient = isOutOfRange
         <Text style={styles.tempUnit}>°C</Text>
       </Text>
       <Text style={styles.tempLabel}>Temperatura Atual</Text>
-    </View>
+   
+    <View style={styles.content}>
+     <View style={[styles.trendBadge, { backgroundColor: trend.color + '33' }]}>
+        <Icon name={trend.icon} size={12} color={trend.color} />
+        <Text style={[styles.trendText, { color: trend.color }]}>{trend.text}</Text>
+     </View>
+  </View>
+   </View>
 
     {experimento && (
         <View style={styles.rangeContainer}>
@@ -644,6 +679,45 @@ sensorStatusContainer: {
     backgroundColor: '#E0E0E0',
     marginHorizontal: 10,
   },
+  mainCard: {
+    backgroundColor: '#3b2657', 
+    borderRadius: 30,
+    padding: 24,
+    width: '92%',
+    alignSelf: 'center',
+    shadowColor: "#2a1a3d",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 15,
+    overflow: 'hidden', 
+  },
+  mainTemp: {
+    fontSize: 72,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: -2,
+  },
+  trendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginLeft: 15,
+  },
+  trendText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+  },
+  subLabel: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: -8,
+  },
   statsGridCard: {
     backgroundColor: '#FFF',
     borderRadius: 24,
@@ -714,6 +788,31 @@ sensorStatusContainer: {
   quickSummaryItem: {
     alignItems: 'center',
   },
+  tempContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    gap: 10
+  },
+  cardSeparator: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: 20,
+  },
+  activeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2, 
+  },
   quickLabel: {
     fontSize: 12,
     color: '#999',
@@ -725,8 +824,8 @@ sensorStatusContainer: {
     color: '#333',
   },
   verticalDivider: {
-    width: 1,
-    height: 30,
+    width: 2,
+    height: 50,
     backgroundColor: '#E0E0E0',
   },
   horizontalDivider: {
@@ -777,10 +876,6 @@ sensorStatusContainer: {
     color: '#FFF',
     fontSize: 12,
     fontWeight: '600',
-  },
-  tempContainer: {
-    alignItems: 'center',
-    marginVertical: 15,
   },
   tempValue: {
     fontSize: 56,

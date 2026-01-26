@@ -4,26 +4,14 @@ import { LabReportModal } from './LabReportModal';
 import api from '../../../services/api';
 import { Experimento } from '../../utils/types/experiments';
 
-export const PublicExperimentsList = () => {
-  const [experiments, setExperiments] = useState<Experimento[]>([]);
-  const [loading, setLoading] = useState(true);
+interface PublicExperimentsListProps {
+  experiments: Experimento[];
+  loading: boolean;
+}
+
+export const PublicExperimentsList = ({ experiments, loading }: PublicExperimentsListProps) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedExp, setSelectedExp] = useState<Experimento | null>(null);
-
-  const fetchPublicHistory = async () => {
-    try {
-      const response = await api.get('experiments/list');
-      setExperiments(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar repositório:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPublicHistory();
-  }, []);
 
   if (loading) return <ActivityIndicator size="large" color="#ce6e46" style={{ marginTop: 20 }} />;
 
@@ -90,14 +78,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardHeader: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' },
   experimentTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   experimentDate: { fontSize: 12, color: '#999' },
   experimentObjective: { fontSize: 14, color: '#666', marginVertical: 8 },
   metadataRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   metadataText: { fontSize: 12, color: '#888' },
   actionButton: {
-    backgroundColor: '#ce6e46', // Cor para combinar com seu gráfico
+    backgroundColor: '#ce6e46', 
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',

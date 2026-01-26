@@ -14,6 +14,8 @@ import api from '../../services/api';
 import { ReportStats, ReportUIModel } from '../utils/types/reports';
 import SearchReports from '../components/history/SearchReports';
 import { PublicExperimentsList } from '../components/history/PublicExperimentsList';
+import { Experimento } from '../utils/types/experiments';
+import SearchExperimentsReports from '../components/history/SearchExperimentsReports';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -26,6 +28,8 @@ const TemperatureHistoryScreen = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportsList, setReportsList] = useState<ReportUIModel[]>([]);
   const [activeTab, setActiveTab] = useState<'geral' | 'experimentos'>('geral');
+  const [experimentsList, setExperimentsList] = useState<Experimento[]>([]);
+const [loadingExp, setLoadingExp] = useState(false);
 
   const handleOpenReport = (report: any) => {
   setSelectedReport(report);
@@ -210,14 +214,14 @@ const avg = (campo: keyof DataItem): number => {
 
       <View style={styles.tabContainer}>
         <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'geral' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'geral' && styles.activeTabGeneral]}
           onPress={() => setActiveTab('geral')}
         >
           <Text style={[styles.tabText, activeTab === 'geral' && styles.activeTabText]}>Geral</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'experimentos' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'experimentos' && styles.activeTabExperiments]}
           onPress={() => setActiveTab('experimentos')}
         >
           <Text style={[styles.tabText, activeTab === 'experimentos' && styles.activeTabText]}>Experimentos</Text>
@@ -281,7 +285,17 @@ const avg = (campo: keyof DataItem): number => {
       ) : (
         /* 3. CONTEÚDO DA ABA EXPERIMENTOS */
         <View style={{ width: '90%' }}>
-           <PublicExperimentsList /> 
+          <SearchExperimentsReports 
+      onLoading={(status) => setLoadingExp(status)}
+      onSearchSuccess={(dados) => setExperimentsList(dados)}
+    />
+
+    <View style={{ width: '90%' }}>
+      <PublicExperimentsList 
+        experiments={experimentsList} 
+        loading={loadingExp} 
+      />
+    </View>
         </View>
       )}
 
@@ -344,8 +358,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 21,
   },
-  activeTabButton: {
+  activeTabGeneral: {
     backgroundColor: '#4A148C',
+    elevation: 2,
+  },
+  activeTabExperiments: {
+    backgroundColor: '#ce6e46',
     elevation: 2,
   },
   tabText: {
