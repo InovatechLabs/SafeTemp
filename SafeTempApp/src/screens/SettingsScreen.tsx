@@ -1,4 +1,4 @@
-import { View, Text, Button, StatusBar, ScrollView, Modal, TextInput } from "react-native"
+import { View, Text, Button, StatusBar, ScrollView, Modal, TextInput, Animated, TouchableOpacity } from "react-native"
 import AlertasModal from "../components/config/AlertsList"
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
@@ -9,13 +9,22 @@ import stconfig from '../.././assets/stconfig.png';
 import { Alert } from "../utils/types/Alerts";
 import TwoFactorActiveScreen from "../components/config/TwoFactorActive";
 import { useFocusEffect } from "@react-navigation/native";
+import { useAuth } from "../contexts/AuthContext";
+import { StyleSheet } from "react-native";
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from '@react-navigation/native';
 
 export default function SettingsScreen() {
   const [alertasAtivos, setAlertasAtivos] = useState<Alert[]>([]);
 
+  const navigation = useNavigation<any>();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [novoNome, setNovoNome] = useState("");
+  const { isGuest } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleOpenEditModal = (id: number, nomeAtual: string | null | undefined) => {
     setEditingId(id);
@@ -39,6 +48,9 @@ useFocusEffect(
   );
 
   const carregarAlertas = async () => {
+    if (isGuest) return;
+
+    setLoading(true);
     try {
       const response = await api.get<Alert[]>('alerts/list');
       setAlertasAtivos(response.data);
@@ -111,7 +123,34 @@ useFocusEffect(
           <Logo source={stconfig} /> 
         </View>
 
-        <AlertasModal
+        <View style={styles.mainContent}>
+          {isGuest ? (
+        
+            <Animated.View style={styles.guestCard}>
+              <View style={styles.guestIconCircle}>
+                <MaterialCommunityIcons name="shield-lock-outline" size={40} color="#6A11CB" />
+              </View>
+              <Text style={styles.guestTitle}>Área Restrita</Text>
+              <Text style={styles.guestDesc}>
+                Para criar alertas personalizados e gerenciar notificações de temperatura, você precisa estar logado.
+              </Text>
+              
+              <TouchableOpacity 
+                style={styles.registerButton}
+                onPress={() => navigation.navigate('Welcome')} 
+              >
+                <LinearGradient
+                  colors={['#6A11CB', '#6A11CB']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.gradientBtn}
+                >
+                  <Text style={styles.btnText}>Criar minha conta</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          ) : (
+                <AlertasModal
           alertas={alertasAtivos}
           onDesativarAlerta={handleDesativar}
           onAtivarAlerta={handleAtivar}
@@ -120,6 +159,8 @@ useFocusEffect(
           onPressEdit={handleOpenEditModal}
           scrollEnabled={false}
         />
+          )}
+      </View>
       </View>
       <View style={{ marginTop: 20, padding: 10 }}>
          <TwoFactorActiveScreen />

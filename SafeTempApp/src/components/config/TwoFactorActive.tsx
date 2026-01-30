@@ -15,6 +15,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import api from '../../../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 export default function TwoFactorActiveScreen() {
@@ -23,6 +24,7 @@ export default function TwoFactorActiveScreen() {
   const [is2FAEnabled, setIs2FAEnabled] = useState<boolean | null>(null);
   const [backupCode, setBackupCode] = useState("Carregando...");
   const [loading, setLoading] = useState(true);
+  const { isGuest } = useAuth();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [tokenInput, setTokenInput] = useState("");
@@ -143,7 +145,7 @@ export default function TwoFactorActiveScreen() {
             <Text style={styles.helperText}>
               Proteja sua conta adicionando uma camada extra de segurança.
             </Text>
-            <TouchableOpacity style={styles.activateButton} onPress={handleActivatePress} activeOpacity={0.8}>
+            <TouchableOpacity style={!isGuest ? styles.activateButton : {backgroundColor: '#d0d0d0', paddingVertical: 15, borderRadius: 8, width: '100%', alignItems: 'center', justifyContent: 'center'}} onPress={handleActivatePress} activeOpacity={0.8} disabled={isGuest}>
                 <Text style={styles.activateButtonText}>Ativar 2FA</Text>
             </TouchableOpacity>
           </View>

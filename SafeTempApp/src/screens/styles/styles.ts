@@ -169,6 +169,46 @@ configButtonText: {
     marginTop: 8,
     color: '#003B73',
   },
+  screenTitle: { fontSize: 28, fontWeight: '800', color: '#1A202C' },
+  mainContent: { alignItems: 'center', padding: 20 },
+  
+
+  guestCard: {
+    width: '100%',
+    backgroundColor: '#F7FAFC',
+    borderRadius: 24,
+    padding: 30,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 20
+  },
+  guestIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    elevation: 2
+  },
+  guestTitle: { fontSize: 20, fontWeight: 'bold', color: '#2D3748' },
+  guestDesc: { 
+    fontSize: 14, 
+    color: '#718096', 
+    textAlign: 'center', 
+    marginTop: 10, 
+    lineHeight: 22 
+  },
+  registerButton: { width: '100%', marginTop: 25 },
+  gradientBtn: { height: 54, borderRadius: 15, justifyContent: 'center', alignItems: 'center', padding: 10 },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+
+  // Estilos Gerais
+  section: { width: '100%', marginTop: 30 },
+  cancelBtn: { padding: 10 },
+  saveBtn: { padding: 10 },
   update: {
     marginTop: 16,
     color: '#666',

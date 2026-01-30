@@ -44,7 +44,7 @@ type HomeScreenNavigationProp = StackNavigationProp<
   'Home'
 >;
 
-const HomeScreen = () => {
+const HomeScreen = ({ start }: any) => {
   const navigation = useNavigation<any>();
   const { signOut, isGuest } = useAuth(); 
 
@@ -52,7 +52,6 @@ const HomeScreen = () => {
   const [history, setHistory] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ min: '--', max: '--', std: 0  });
-  const [atual, setAtual] = useState(0);
   const [trend, setTrend] = useState({ icon: 'minus', color: '#adb5bd', text: 'Estável' });
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -157,25 +156,16 @@ const lastDataRes = responses[0] as any;
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
+useFocusEffect(
+  useCallback(() => {
+
+    loadDashboardData();
+    const interval = setInterval(() => {
       loadDashboardData();
-    }, [])
-  );
-
-
-  const updateTemperature = (newTemp: number) => {
-    setAtual((prevTemp) => {
-      if (prevTemp !== 0) {
-        if (newTemp > prevTemp) setTrend({ icon: 'chevron-up', color: '#ff6b6b', text: 'Subindo' });
-         else if (newTemp < prevTemp) setTrend({ icon: 'chevron-down', color: '#4dabf7', text: 'Descendo' });
-         else {
-          setTrend({ icon: 'minus', color: '#adb5bd', text: 'Estável' });
-        }
-      }
-      return newTemp;
-    })
-  }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [])
+);
  
   const getTimeDifference = (timestamp: string | undefined) => {
   if (!timestamp) return "Desconhecido";
@@ -265,7 +255,7 @@ const getStability = (std: number) => {
 });
   }
 
-  const normalGradient = ['#2A2D5D', '#4B2A59'] as const;
+  const normalGradient = ['#6A11CB', '#4a0c64'] as const;
   const normalStatusBg = '#4CAF50'; 
   const normalIcon = "thermometer";
 
@@ -311,6 +301,7 @@ const experimentGradient = isOutOfRange
   activeOpacity={0.9} 
   onPress={experimento ? handleExperimentDetails : undefined}
 >
+
 <LinearGradient
     colors={experimento ? experimentGradient : currentGradient}
     start={{ x: 0, y: 0 }}
@@ -844,11 +835,11 @@ sensorStatusContainer: {
     marginBottom: 30,
   },
   heroCard: {
-    borderRadius: 24,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 20,
     elevation: 10,
-    shadowColor: '#4B2A59',
+    shadowColor: '#5f2479',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
