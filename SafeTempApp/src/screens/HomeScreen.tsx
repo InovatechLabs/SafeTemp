@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -18,7 +18,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DataItem } from '../utils/types/DataItem';
-import api from '../../services/api';
+import api, { getNotifications } from '../../services/api';
 import styled from 'styled-components/native';
 import TemperatureChart from '../components/dashboard/TemperatureChart';
 import * as SecureStore from 'expo-secure-store';
@@ -33,6 +33,8 @@ import { StatCard } from '../components/dashboard/StatCard';
 import { ExperimentoAtivo } from '../utils/types/experiments';
 import { ExperimentModal } from '../components/dashboard/ExperimentModal';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import { Notification } from '../utils/types/notifications';
+import { NotificationInbox } from '../components/dashboard/NotificationInbox';
 
 type RootStackParamList = {
   Home: undefined;
@@ -43,6 +45,17 @@ type HomeScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'Home'
 >;
+
+const NotificationButton = ({ onPress, unreadCount }: { onPress: () => void, unreadCount: number }) => (
+  <TouchableOpacity onPress={onPress} style={styles.iconButton}>
+    <MaterialCommunityIcons name="bell-outline" size={26} color="#1E293B" />
+    {unreadCount > 0 && (
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+      </View>
+    )}
+  </TouchableOpacity>
+);
 
 const HomeScreen = ({ start }: any) => {
   const navigation = useNavigation<any>();
@@ -67,6 +80,19 @@ const HomeScreen = ({ start }: any) => {
   const [analytics, setAnalytics] = useState<Statistics['statistics'] | null>(null);
   const [experimento, setExperimento] = useState<ExperimentoAtivo | null>(null);
   const [expModalVisible, setExpModalVisible] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const loadNotifications = async () => {
+    const res = await getNotifications();
+    setNotifications(res.data);
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -166,6 +192,20 @@ useFocusEffect(
     return () => clearInterval(interval);
   }, [])
 );
+
+const handleMarkAsRead = async () => {
+  try {
+ 
+    await api.patch('notifications/read');
+
+    setNotifications(prevNotifications => 
+      prevNotifications.map(n => ({ ...n, read: true }))
+    );
+
+  } catch (error) {
+    console.error("Erro ao marcar notificações como lidas:", error);
+  }
+};
  
   const getTimeDifference = (timestamp: string | undefined) => {
   if (!timestamp) return "Desconhecido";
@@ -196,11 +236,11 @@ useFocusEffect(
     return false; 
   })();
 
-const getStability = (std: number) => {
+  const getStability = (std: number) => {
     if (std < 1) return { label: "Alta Estabilidade", color: "#4CAF50", icon: "pulse" };
     if (std < 2.5) return { label: "Oscilação Normal", color: "#FFC107", icon: "wave" };
     return { label: "Alta Instabilidade", color: "#FF4444", icon: "flash" };
-};
+  };
 
   const handleSaveAlert = async () => {
     try {
@@ -210,7 +250,7 @@ const getStability = (std: number) => {
         return;
       }
 
-      const today = new Date().toISOString().split("T")[0]; 
+      const today = new Date().toISOString().split("T")[0];
       const horaInicioISO = horaInicio ? `${today}T${horaInicio}:00` : null;
       const horaFimISO = horaFim ? `${today}T${horaFim}:00` : null;
 
@@ -235,7 +275,7 @@ const getStability = (std: number) => {
         setModalVisible(false);
         setTemperaturaMin(""); setTemperaturaMax(""); setHoraInicio(""); setHoraFim(""); setNome(""); setNota(""); setChecked(true);
       } else {
-         Alert.alert("Erro", "Falha ao salvar alerta. Verifique os dados.");
+        Alert.alert("Erro", "Falha ao salvar alerta. Verifique os dados.");
       }
     } catch (error) {
       console.error(error);
@@ -248,11 +288,11 @@ const getStability = (std: number) => {
   };
 
   const handleExperimentDetails = () => {
-    navigation.navigate('ExperimentDetail', { 
-  experimento, 
-  history, 
-  currentTemp: currentTemperature 
-});
+    navigation.navigate('ExperimentDetail', {
+      experimento,
+      history,
+      currentTemp: currentTemperature
+    });
   }
 
   const normalGradient = ['#6A11CB', '#4a0c64'] as const;
@@ -287,9 +327,12 @@ const experimentGradient = isOutOfRange
         <View style={styles.logoContainer}>
           <Logo source={stdb} />
         </View> 
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <MaterialCommunityIcons name="logout" size={24} color="#FF4444" />
-        </TouchableOpacity>
+           
+        <NotificationButton 
+          unreadCount={unreadCount} 
+          onPress={() => setIsModalVisible(true)} 
+        />
+   
       </View>
 
       <ScrollView 
@@ -599,6 +642,12 @@ const experimentGradient = isOutOfRange
   onClose={() => setExpModalVisible(false)} 
   onSuccess={loadDashboardData} 
 />
+<NotificationInbox 
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        notifications={notifications}
+        onMarkAsRead={handleMarkAsRead}
+      />
     </SafeAreaView>
   );
 };
@@ -614,7 +663,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 15,
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   welcomeText: {
     fontSize: 16,
@@ -844,6 +893,44 @@ sensorStatusContainer: {
     shadowOpacity: 0.3,
     shadowRadius: 20,
   },
+  inboxContainer: { 
+    backgroundColor: '#FFF', 
+    height: '70%', 
+    borderTopLeftRadius: 30, 
+    borderTopRightRadius: 30, 
+    padding: 20 
+  },
+  inboxHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  inboxTitle: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
+  notiCard: { 
+    flexDirection: 'row', 
+    padding: 15, 
+    borderRadius: 16, 
+    backgroundColor: '#F8FAFC', 
+    marginBottom: 10,
+    alignItems: 'center'
+  },
+  unreadCard: { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
+  notiIconWrapper: { marginRight: 12 },
+  notiContent: { flex: 1 },
+  notiTitle: { fontWeight: 'bold', fontSize: 14, color: '#1E293B' },
+  notiBody: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  notiTime: { fontSize: 11, color: '#94A3B8', marginTop: 5 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#6A11CB' },
+  readAllBtn: { marginTop: 15, alignItems: 'center', padding: 10 },
+  readAllText: { color: '#6A11CB', fontWeight: 'bold' },
+  badge: { 
+    position: 'absolute', 
+    left: -4, 
+    top: -4, 
+    backgroundColor: '#EF4444', 
+    borderRadius: 10, 
+    width: 18, 
+    height: 18, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
   heroHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -881,6 +968,17 @@ sensorStatusContainer: {
   tempLabel: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 14,
+  },
+  iconButton: {
+    position: 'relative', 
+    padding: 8,
+    marginRight: 10, 
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+    letterSpacing: -0.5,
   },
   statsRow: {
     flexDirection: 'row',
