@@ -6,6 +6,9 @@ import { ComparisonResponse } from '../../src/utils/types/comparison/index';
 import api from '../../services/api'; 
 import { LineChart } from 'react-native-chart-kit';
 import ComparisonSummaryCard from '../components/comparison/ComparisonSummaryCard';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import stcomparacoes from '../../assets/stcomparacoes.png';
+import { Logo } from './HomeScreen';
 
 export interface HistoryPoint {
   timestamp: string;   // ISO string
@@ -14,12 +17,27 @@ export interface HistoryPoint {
 }
 
 const ComparisonScreen = () => {
-const [data, setData] = useState<ComparisonResponse | null>(null);
-const [seriesA, setSeriesA] = useState<HistoryPoint[]>([]);
-const [seriesB, setSeriesB] = useState<HistoryPoint[]>([]);
-const [loading, setLoading] = useState(true);
-const [tooltipVisible, setTooltipVisible] = useState(false);
-const [tooltipData, setTooltipData] = useState({ title: '', description: '' });
+
+  const getLocalDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const now = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+
+  const [data, setData] = useState<ComparisonResponse | null>(null);
+  const [dateA, setDateA] = useState(getLocalDateString(yesterday));
+  const [dateB, setDateB] = useState(getLocalDateString(now));
+  const [seriesA, setSeriesA] = useState<HistoryPoint[]>([]);
+  const [seriesB, setSeriesB] = useState<HistoryPoint[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
+  const [currentPicker, setCurrentPicker] = useState<'A' | 'B'>('A');
+  const [loading, setLoading] = useState(true);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipData, setTooltipData] = useState({ title: '', description: '' });
 
 const showTooltip = (label: string) => {
   setTooltipData({
@@ -28,6 +46,39 @@ const showTooltip = (label: string) => {
   });
   setTooltipVisible(true);
 };
+
+const onChange = (event: any, selectedDate?: Date) => {
+
+  setShowPicker(false); 
+  
+  if (event.type === 'set' && selectedDate) {
+    const year = selectedDate.getFullYear();
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+
+    const formattedDate = `${year}-${month}-${day}`;
+    
+    if (currentPicker === 'A') {
+      setDateA(formattedDate);
+    } else {
+      setDateB(formattedDate);
+    }
+  }
+};
+
+const openPicker = (type: 'A' | 'B') => {
+  setCurrentPicker(type);
+  setShowPicker(true);
+};
+
+const pickerValue = useMemo(() => {
+  const dateStr = currentPicker === 'A' ? dateA : dateB;
+  if (!dateStr || dateStr.includes('NaN')) return new Date();
+  
+
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day); 
+}, [currentPicker, dateA, dateB, showPicker]);
 
 const getReliabilityConfig = (reliability: string) => {
   switch (reliability) {
@@ -52,49 +103,69 @@ const formatTimeBRT = useCallback((timestamp: string | Date) => {
   }, []);
 
 
-const chartDataA = useMemo(() => ({
-  labels: seriesA.map((_, i) => i % 5 === 0 ? formatTimeBRT(_.timestamp) : ""), 
-  datasets: [{ data: seriesA.map(p => p.value) }]
-}), [seriesA]);
+const chartDataA = useMemo(() => {
 
-const chartDataB = useMemo(() => ({
-  labels: seriesB.map((_, i) => i % 5 === 0 ? formatTimeBRT(_.timestamp) : ""), 
-  datasets: [{ data: seriesB.map(p => p.value) }]
-}), [seriesB]);
+  const maxLabels = 6;
+  const skip = Math.ceil(seriesA.length / maxLabels);
 
-const fetchComparison = async () => {
+  return {
+    labels: seriesA.map((_, i) => {
+      if (i === 0 || i === seriesA.length - 1 || i % skip === 0) {
+        return formatTimeBRT(_.timestamp);
+      }
+      return "";
+    }),
+    datasets: [{ data: seriesA.map(p => p.value) }]
+  };
+}, [seriesA, formatTimeBRT]);
+
+const chartDataB = useMemo(() => {
+  const maxLabels = 6;
+  const skip = Math.ceil(seriesB.length / maxLabels);
+
+  return {
+    labels: seriesB.map((_, i) => {
+      if (i === 0 || i === seriesB.length - 1 || i % skip === 0) {
+        return formatTimeBRT(_.timestamp);
+      }
+      return "";
+    }),
+    datasets: [{ data: seriesB.map(p => p.value) }]
+  };
+}, [seriesB, formatTimeBRT]);
+
+const fetchComparison = useCallback(async (selectedDateA: string, selectedDateB: string) => {
   try {
     setLoading(true);
-
     const granularity = '10m';
 
     const [comparisonRes, historyARes, historyBRes] = await Promise.all([
       api.post('comparison/compare', {
-        rangeA: '2026-01-26',
-        rangeB: '2026-01-29'
+        rangeA: selectedDateA,
+        rangeB: selectedDateB,
       }),
       api.get('data/history', {
-        params: { date: '2026-01-26', granularity }
+        params: { date: selectedDateA, granularity }
       }),
       api.get('data/history', {
-        params: { date: '2026-01-29', granularity }
+        params: { date: selectedDateB, granularity }
       })
     ]);
 
     setData(comparisonRes.data);
     setSeriesA(historyARes.data.records);
     setSeriesB(historyBRes.data.records);
-
   } catch (err) {
     console.error(err);
+    Alert.alert("Erro", "Não foi possível carregar os dados deste período.");
   } finally {
     setLoading(false);
   }
-};
+}, []);
 
-  useEffect(() => {
-    fetchComparison();
-  }, []);
+useEffect(() => {
+  fetchComparison(dateA, dateB);
+}, []);
 
   if (loading) {
     return (
@@ -187,9 +258,51 @@ return (
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <LinearGradient colors={['#6A11CB', '#2575FC']} style={styles.header}>
-        <Text style={styles.headerTitle}>Comparativo de Períodos</Text>
-      </LinearGradient>
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <Logo source={stcomparacoes} />
+              </View>   
+            </View>
+      <View style={styles.filterCard}>
+  <Text style={styles.filterTitle}>Comparar Períodos</Text>
+  
+<View style={styles.inputsRow}>
+ 
+  <TouchableOpacity style={styles.dateInput} onPress={() => openPicker('A')}>
+    <MaterialCommunityIcons name="calendar" size={18} color="#6A11CB" />
+    <View style={styles.dateTextContainer}>
+      <Text style={styles.dateLabel}>Série A</Text>
+      <Text style={styles.dateValue}>{dateA}</Text>
+    </View>
+  </TouchableOpacity>
+
+  <MaterialCommunityIcons name="swap-horizontal" size={24} color="#94A3B8" />
+
+  <TouchableOpacity style={styles.dateInput} onPress={() => openPicker('B')}>
+    <MaterialCommunityIcons name="calendar" size={18} color="#CE6E46" />
+    <View style={styles.dateTextContainer}>
+      <Text style={styles.dateLabel}>Série B</Text>
+      <Text style={styles.dateValue}>{dateB}</Text>
+    </View>
+  </TouchableOpacity>
+</View>
+
+{showPicker && (
+  <DateTimePicker
+    value={pickerValue}
+    mode="date"
+    display="default"
+    onChange={onChange}
+    maximumDate={new Date()} 
+  />
+)}
+  <TouchableOpacity 
+    style={styles.updateButton} 
+    onPress={() => fetchComparison(dateA, dateB)}
+  >
+    <Text style={styles.updateButtonText}>Atualizar Comparação</Text>
+  </TouchableOpacity>
+</View>
       <View style={styles.chartsWrapper}>
   <Text style={styles.sectionTitle}>Tendência Temporal</Text>
   
@@ -406,7 +519,8 @@ const PeriodCard = ({ title, date, stats, color }: any) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },  
+  logoContainer: { marginTop: 20, marginBottom: 20 },
   header: { padding: 30, paddingTop: 60, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
   headerTitle: { color: '#FFF', fontSize: 22, fontWeight: 'bold', textAlign: 'center' },
   row: { flexDirection: 'row', padding: 16, justifyContent: 'space-between' },
@@ -548,6 +662,71 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginTop: 2,
   },
+  filterCard: {
+  backgroundColor: '#FFF',
+  margin: 15,
+  padding: 15,
+  borderRadius: 16,
+  elevation: 4, 
+  shadowColor: '#000', 
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+},
+  filterTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 15,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  dateTextContainer: {
+    marginLeft: 10, 
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+    textTransform: 'uppercase', 
+    marginBottom: 2,
+  },
+  dateValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#334155',
+  },
+  
+ 
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    width: '44%', 
+  },
+inputsRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: 15,
+},
+updateButton: {
+  backgroundColor: '#6A11CB',
+  padding: 12,
+  borderRadius: 12,
+  alignItems: 'center',
+},
+updateButtonText: {
+  color: '#FFF',
+  fontWeight: 'bold',
+  fontSize: 14,
+},
   recordBadge: {
     backgroundColor: 'rgba(0,0,0,0.05)',
     paddingHorizontal: 6,
